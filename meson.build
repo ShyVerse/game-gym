@@ -22,7 +22,10 @@ if host_os == 'darwin'
     dirs: [meson.project_source_root() / 'wgpu-native' / 'lib'],
     required: true)
   platform_deps = [
-    dependency('appleframeworks', modules: ['Metal', 'QuartzCore']),
+    dependency('appleframeworks', modules: [
+      'Metal', 'QuartzCore', 'Cocoa', 'CoreGraphics',
+      'IOKit', 'CoreFoundation',
+    ]),
   ]
 elif host_os == 'linux'
   wgpu_lib = cpp.find_library('wgpu_native',
