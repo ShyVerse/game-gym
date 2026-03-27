@@ -1,0 +1,20 @@
+# Build
+builddir/
+build/
+
+# wgpu-native prebuilt
+wgpu-native/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+compile_commands.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Superpowers brainstorm sessions
+.superpowers/
