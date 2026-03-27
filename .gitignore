@@ -5,6 +5,9 @@ build/
 # wgpu-native prebuilt
 wgpu-native/
 
+# Dear ImGui source (fetched by scripts/setup-imgui.sh)
+third_party/imgui/
+
 # IDE
 .vscode/
 .idea/
