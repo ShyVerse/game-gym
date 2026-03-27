@@ -10,6 +10,8 @@ engine_sources = files(
   'ecs/systems.cpp',
   'physics/physics_layers.cpp',
   'physics/physics_world.cpp',
+  'compute/gpu_buffer.cpp',
+  'compute/compute_pipeline.cpp',
 )
 
 engine_inc = include_directories('.')
