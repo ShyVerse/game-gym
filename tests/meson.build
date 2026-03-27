@@ -43,4 +43,10 @@ if get_option('enable_tests')
   test('editor', test_editor,
     workdir: meson.source_root(),
   )
+
+  test_mcp = executable('test_mcp',
+    'test_mcp.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('mcp', test_mcp)
 endif
