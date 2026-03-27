@@ -3,16 +3,14 @@
 #include "renderer/gpu_context.h"
 #include "renderer/renderer.h"
 #include "ecs/world.h"
+#include "physics/physics_world.h"
 
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
-#include <cstdio>
 
 namespace gg {
 
-// Destructor defined here so the compiler sees complete types for
-// Window, GpuContext, Renderer, and World (required by unique_ptr deleter).
 Engine::~Engine() = default;
 
 std::string Engine::read_file(const std::string& path) {
@@ -54,6 +52,11 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         throw std::runtime_error("Failed to create ECS world");
     }
 
+    engine->physics_ = PhysicsWorld::create({});
+    if (!engine->physics_) {
+        throw std::runtime_error("Failed to create physics world");
+    }
+
     return engine;
 }
 
@@ -62,6 +65,11 @@ void Engine::run() {
 
     while (!window_->should_close()) {
         window_->poll_events();
+
+        // Physics step with bidirectional ECS sync
+        physics_->step_with_ecs(FIXED_DT, world_->raw());
+
+        // ECS progress (VelocitySystem for non-physics entities, other systems)
         world_->progress(FIXED_DT);
 
         if (renderer_->begin_frame()) {
@@ -70,5 +78,8 @@ void Engine::run() {
         }
     }
 }
+
+World& Engine::world() { return *world_; }
+PhysicsWorld& Engine::physics() { return *physics_; }
 
 } // namespace gg

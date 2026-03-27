@@ -8,6 +8,7 @@ class Window;
 class GpuContext;
 class Renderer;
 class World;
+class PhysicsWorld;
 
 struct EngineConfig {
     std::string title       = "Game-Gym Engine";
@@ -19,9 +20,7 @@ struct EngineConfig {
 
 class Engine {
 public:
-    /// Factory: creates Window, GpuContext, Renderer, and ECS World.
     static std::unique_ptr<Engine> create(const EngineConfig& config);
-
     ~Engine();
 
     Engine(const Engine&) = delete;
@@ -29,18 +28,23 @@ public:
     Engine(Engine&&) = delete;
     Engine& operator=(Engine&&) = delete;
 
-    /// Run the main loop until the window is closed.
     void run();
+
+    /// Access the ECS world.
+    World& world();
+
+    /// Access the physics world.
+    PhysicsWorld& physics();
 
 private:
     Engine() = default;
-
     static std::string read_file(const std::string& path);
 
-    std::unique_ptr<Window>     window_;
-    std::unique_ptr<GpuContext> gpu_;
-    std::unique_ptr<Renderer>   renderer_;
-    std::unique_ptr<World>      world_;
+    std::unique_ptr<Window>       window_;
+    std::unique_ptr<GpuContext>   gpu_;
+    std::unique_ptr<Renderer>     renderer_;
+    std::unique_ptr<World>        world_;
+    std::unique_ptr<PhysicsWorld> physics_;
 };
 
 } // namespace gg
