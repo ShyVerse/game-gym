@@ -13,7 +13,10 @@ cpp = meson.get_compiler('cpp')
 
 glfw_dep = dependency('glfw3', fallback: ['glfw', 'glfw_dep'])
 
-wgpu_inc = include_directories('wgpu-native/include')
+# wgpu-native release zips place headers under include/webgpu/.
+# Expose both the parent (for #include <webgpu/webgpu.h>) and the
+# subdirectory (for #include <webgpu.h> used by glfw3webgpu).
+wgpu_inc = include_directories('wgpu-native/include', 'wgpu-native/include/webgpu')
 if host_os == 'darwin'
   wgpu_lib = cpp.find_library('wgpu_native',
     dirs: [meson.project_source_root() / 'wgpu-native' / 'lib'],

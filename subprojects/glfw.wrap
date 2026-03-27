@@ -2,6 +2,13 @@
 url = https://github.com/glfw/glfw.git
 revision = 3.4
 depth = 1
+method = cmake
+
+[cmake]
+GLFW_BUILD_DOCS = False
+GLFW_BUILD_TESTS = False
+GLFW_BUILD_EXAMPLES = False
+GLFW_INSTALL = False
 
 [provide]
 glfw3 = glfw_dep
