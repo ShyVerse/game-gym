@@ -242,3 +242,105 @@ TEST(PhysicsSyncTest, VelocitySystemSkipsPhysicsEntities) {
     EXPECT_FLOAT_EQ(t_physics->position.x, 0.0f);
     EXPECT_NEAR(t_simple->position.x, 10.0f, 0.001f);
 }
+
+// ---------------------------------------------------------------------------
+// Task 6: Raycast Tests
+// ---------------------------------------------------------------------------
+
+TEST(PhysicsRaycastTest, HitsStaticBody) {
+    gg::PhysicsConfig cfg;
+    cfg.gravity = {0, 0, 0};
+    auto pw = gg::PhysicsWorld::create(cfg);
+
+    gg::BodyDef def;
+    def.shape = gg::BoxShapeDesc{5, 5, 5};
+    def.motion_type = gg::MotionType::Static;
+    def.layer = gg::PhysicsLayer::Static;
+    pw->add_body({0, 0, 0}, {0, 0, 0, 1}, def);
+
+    pw->step(0.0f);  // Let broadphase settle
+
+    gg::RayHit hit;
+    bool did_hit = pw->raycast({0, 0, -20}, {0, 0, 1}, 100.0f, hit);
+    EXPECT_TRUE(did_hit);
+    EXPECT_NE(hit.body_id, UINT32_MAX);
+    EXPECT_GT(hit.fraction, 0.0f);
+    EXPECT_LT(hit.fraction, 1.0f);
+}
+
+TEST(PhysicsRaycastTest, MissesWhenNoBody) {
+    gg::PhysicsConfig cfg;
+    cfg.gravity = {0, 0, 0};
+    auto pw = gg::PhysicsWorld::create(cfg);
+
+    gg::RayHit hit;
+    bool did_hit = pw->raycast({0, 0, 0}, {0, 1, 0}, 100.0f, hit);
+    EXPECT_FALSE(did_hit);
+}
+
+// ---------------------------------------------------------------------------
+// Task 6: Contact Event Tests
+// ---------------------------------------------------------------------------
+
+TEST(PhysicsContactTest, DetectsCollision) {
+    gg::PhysicsConfig cfg;
+    cfg.gravity = {0, -9.81f, 0};
+    auto pw = gg::PhysicsWorld::create(cfg);
+
+    // Static floor
+    gg::BodyDef floor_def;
+    floor_def.shape = gg::BoxShapeDesc{50, 1, 50};
+    floor_def.motion_type = gg::MotionType::Static;
+    floor_def.layer = gg::PhysicsLayer::Static;
+    pw->add_body({0, -1, 0}, {0, 0, 0, 1}, floor_def);
+
+    // Dynamic sphere above
+    gg::BodyDef sphere_def;
+    sphere_def.shape = gg::SphereShapeDesc{0.5f};
+    sphere_def.motion_type = gg::MotionType::Dynamic;
+    pw->add_body({0, 2, 0}, {0, 0, 0, 1}, sphere_def);
+
+    bool found_contact = false;
+    for (int i = 0; i < 120; ++i) {
+        pw->step(1.0f / 60.0f);
+        for (const auto& ev : pw->contact_events()) {
+            if (ev.type == gg::ContactType::Begin) {
+                found_contact = true;
+            }
+        }
+        if (found_contact) break;
+    }
+    EXPECT_TRUE(found_contact);
+}
+
+TEST(PhysicsContactTest, TriggerDetectsDynamic) {
+    gg::PhysicsConfig cfg;
+    cfg.gravity = {0, -9.81f, 0};
+    auto pw = gg::PhysicsWorld::create(cfg);
+
+    // Trigger zone
+    gg::BodyDef trigger_def;
+    trigger_def.shape = gg::BoxShapeDesc{5, 5, 5};
+    trigger_def.motion_type = gg::MotionType::Static;
+    trigger_def.layer = gg::PhysicsLayer::Trigger;
+    trigger_def.is_sensor = true;
+    pw->add_body({0, 0, 0}, {0, 0, 0, 1}, trigger_def);
+
+    // Dynamic sphere falling through
+    gg::BodyDef sphere_def;
+    sphere_def.shape = gg::SphereShapeDesc{0.5f};
+    sphere_def.motion_type = gg::MotionType::Dynamic;
+    pw->add_body({0, 10, 0}, {0, 0, 0, 1}, sphere_def);
+
+    bool found_trigger = false;
+    for (int i = 0; i < 120; ++i) {
+        pw->step(1.0f / 60.0f);
+        for (const auto& ev : pw->contact_events()) {
+            if (ev.type == gg::ContactType::Begin) {
+                found_trigger = true;
+            }
+        }
+        if (found_trigger) break;
+    }
+    EXPECT_TRUE(found_trigger);
+}
