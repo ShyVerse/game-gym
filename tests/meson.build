@@ -15,4 +15,10 @@ if get_option('enable_tests')
     dependencies: [engine_dep, gtest_dep, gtest_main_dep],
   )
   test('gpu_context', test_gpu)
+
+  test_ecs = executable('test_ecs',
+    'test_ecs.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('ecs', test_ecs)
 endif
