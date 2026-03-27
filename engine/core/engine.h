@@ -36,6 +36,9 @@ public:
     /// Access the physics world.
     PhysicsWorld& physics();
 
+    /// Access the GPU context (for compute shaders, custom rendering).
+    GpuContext& gpu();
+
 private:
     Engine() = default;
     static std::string read_file(const std::string& path);

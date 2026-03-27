@@ -81,5 +81,6 @@ void Engine::run() {
 
 World& Engine::world() { return *world_; }
 PhysicsWorld& Engine::physics() { return *physics_; }
+GpuContext& Engine::gpu() { return *gpu_; }
 
 } // namespace gg
