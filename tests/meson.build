@@ -35,4 +35,12 @@ if get_option('enable_tests')
   test('compute', test_compute,
     workdir: meson.source_root(),
   )
+
+  test_editor = executable('test_editor',
+    'test_editor.cpp',
+    dependencies: [engine_dep, imgui_dep, gtest_dep, gtest_main_dep],
+  )
+  test('editor', test_editor,
+    workdir: meson.source_root(),
+  )
 endif
