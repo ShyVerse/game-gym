@@ -10,6 +10,8 @@ class Renderer;
 class World;
 class PhysicsWorld;
 class EditorUI;
+class McpServer;
+class McpTransport;
 
 struct EngineConfig {
     std::string title       = "Game-Gym Engine";
@@ -17,6 +19,7 @@ struct EngineConfig {
     uint32_t    height      = 720;
     bool        resizable   = true;
     std::string shader_path = "shaders/triangle.wgsl";
+    bool        enable_mcp  = false;
 };
 
 class Engine {
@@ -50,6 +53,8 @@ private:
     std::unique_ptr<World>        world_;
     std::unique_ptr<PhysicsWorld> physics_;
     std::unique_ptr<EditorUI>     editor_;
+    std::unique_ptr<McpServer>    mcp_;
+    std::unique_ptr<McpTransport> mcp_transport_;
 };
 
 } // namespace gg

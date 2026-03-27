@@ -5,6 +5,9 @@
 #include "ecs/world.h"
 #include "physics/physics_world.h"
 #include "editor/editor_ui.h"
+#include "mcp/mcp_server.h"
+#include "mcp/mcp_tools.h"
+#include "mcp/mcp_stdio_transport.h"
 
 #include <fstream>
 #include <sstream>
@@ -63,6 +66,13 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         throw std::runtime_error("Failed to create EditorUI");
     }
 
+    if (config.enable_mcp) {
+        engine->mcp_ = McpServer::create("game-gym-engine", "1.0.0");
+        register_mcp_tools(*engine->mcp_, *engine->world_, *engine->physics_);
+        engine->mcp_transport_ = McpStdioTransport::create();
+        engine->mcp_transport_->start();
+    }
+
     return engine;
 }
 
@@ -71,6 +81,18 @@ void Engine::run() {
 
     while (!window_->should_close()) {
         window_->poll_events();
+
+        // MCP: poll and handle incoming requests
+        if (mcp_ && mcp_transport_) {
+            std::string request = mcp_transport_->poll_request();
+            while (!request.empty()) {
+                const std::string response = mcp_->handle_message(request);
+                if (!response.empty()) {
+                    mcp_transport_->send_response(response);
+                }
+                request = mcp_transport_->poll_request();
+            }
+        }
 
         // Physics step with bidirectional ECS sync
         physics_->step_with_ecs(FIXED_DT, world_->raw());
