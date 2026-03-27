@@ -8,13 +8,23 @@ engine_sources = files(
   'renderer/renderer.cpp',
   'ecs/world.cpp',
   'ecs/systems.cpp',
+  'physics/physics_layers.cpp',
+  'physics/physics_world.cpp',
 )
 
 engine_inc = include_directories('.')
 
+# Jolt is compiled with these defines in all non-release configs; we must match
+# them exactly or RegisterTypes() will abort on version-mismatch detection.
+jolt_client_defines = [
+  '-DJPH_DEBUG_RENDERER',
+  '-DJPH_PROFILE_ENABLED',
+]
+
 engine_lib = shared_library('game-gym-engine',
   engine_sources,
   include_directories: engine_inc,
+  cpp_args: jolt_client_defines,
   dependencies: [glfw_dep, wgpu_dep, glfw3webgpu_dep, flecs_dep, jolt_dep],
   install: true,
 )

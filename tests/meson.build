@@ -21,4 +21,10 @@ if get_option('enable_tests')
     dependencies: [engine_dep, gtest_dep, gtest_main_dep],
   )
   test('ecs', test_ecs)
+
+  test_physics = executable('test_physics',
+    'test_physics.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('physics', test_physics)
 endif
