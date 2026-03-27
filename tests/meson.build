@@ -27,4 +27,12 @@ if get_option('enable_tests')
     dependencies: [engine_dep, gtest_dep, gtest_main_dep],
   )
   test('physics', test_physics)
+
+  test_compute = executable('test_compute',
+    'test_compute.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('compute', test_compute,
+    workdir: meson.source_root(),
+  )
 endif
