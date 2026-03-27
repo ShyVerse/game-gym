@@ -1,0 +1,13 @@
+[wrap-git]
+url = https://github.com/SanderMertens/flecs.git
+revision = v4.0.4
+depth = 1
+method = cmake
+
+[cmake]
+FLECS_SHARED = False
+FLECS_STATIC = True
+FLECS_TESTS = False
+
+[provide]
+flecs = flecs_dep
