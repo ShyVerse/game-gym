@@ -41,20 +41,17 @@ wgpu_dep = declare_dependency(
   dependencies: [wgpu_lib] + platform_deps,
 )
 
-# On macOS, glfw3webgpu.c uses Foundation/QuartzCore (Objective-C APIs).
-# We compile it as Objective-C by adding the 'objc' language and using
-# override_options to treat the .c file as objc.
+# On macOS, glfw3webgpu uses Foundation/QuartzCore (Objective-C).
+# Use .m file on macOS, .c on other platforms.
 if host_os == 'darwin'
   add_languages('objc', native: false)
   glfw3webgpu_lib = static_library('glfw3webgpu',
-    'third_party/glfw3webgpu/glfw3webgpu.c',
+    'third_party/glfw3webgpu/glfw3webgpu_macos.m',
     include_directories: [
       include_directories('third_party/glfw3webgpu'),
       wgpu_inc,
     ],
-    dependencies: [glfw_dep],
-    override_options: ['c_std=none'],
-    objc_args: ['-x', 'objective-c'],
+    dependencies: [glfw_dep, dependency('appleframeworks', modules: ['Foundation', 'QuartzCore'])],
   )
 else
   glfw3webgpu_lib = static_library('glfw3webgpu',
