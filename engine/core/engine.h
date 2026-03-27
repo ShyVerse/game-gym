@@ -9,6 +9,7 @@ class GpuContext;
 class Renderer;
 class World;
 class PhysicsWorld;
+class EditorUI;
 
 struct EngineConfig {
     std::string title       = "Game-Gym Engine";
@@ -48,6 +49,7 @@ private:
     std::unique_ptr<Renderer>     renderer_;
     std::unique_ptr<World>        world_;
     std::unique_ptr<PhysicsWorld> physics_;
+    std::unique_ptr<EditorUI>     editor_;
 };
 
 } // namespace gg

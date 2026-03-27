@@ -4,6 +4,7 @@
 #include "renderer/renderer.h"
 #include "ecs/world.h"
 #include "physics/physics_world.h"
+#include "editor/editor_ui.h"
 
 #include <fstream>
 #include <sstream>
@@ -57,6 +58,11 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         throw std::runtime_error("Failed to create physics world");
     }
 
+    engine->editor_ = EditorUI::create(engine->window_->native_handle(), *engine->gpu_);
+    if (!engine->editor_) {
+        throw std::runtime_error("Failed to create EditorUI");
+    }
+
     return engine;
 }
 
@@ -72,8 +78,14 @@ void Engine::run() {
         // ECS progress (VelocitySystem for non-physics entities, other systems)
         world_->progress(FIXED_DT);
 
+        // Editor: begin new ImGui frame and build panel draw calls
+        editor_->begin_frame();
+        editor_->draw_panels(*world_, *physics_);
+
         if (renderer_->begin_frame()) {
             renderer_->draw_triangle();
+            // Render ImGui draw data into the active render pass
+            editor_->render(renderer_->render_pass());
             renderer_->end_frame();
         }
     }

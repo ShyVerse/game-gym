@@ -24,6 +24,8 @@ public:
     void draw_triangle();
     void end_frame();
 
+    [[nodiscard]] WGPURenderPassEncoder render_pass() const { return render_pass_; }
+
 private:
     explicit Renderer(GpuContext& ctx);
 
