@@ -88,6 +88,20 @@ uint32_t Window::width() const {
 uint32_t Window::height() const {
     return height_;
 }
+uint32_t Window::framebuffer_width() const {
+    int w = 0;
+    if (handle_) {
+        glfwGetFramebufferSize(handle_, &w, nullptr);
+    }
+    return static_cast<uint32_t>(w);
+}
+uint32_t Window::framebuffer_height() const {
+    int h = 0;
+    if (handle_) {
+        glfwGetFramebufferSize(handle_, nullptr, &h);
+    }
+    return static_cast<uint32_t>(h);
+}
 GLFWwindow* Window::native_handle() const {
     return handle_;
 }
