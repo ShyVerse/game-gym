@@ -13,6 +13,11 @@ class EditorUI;
 class McpServer;
 class McpTransport;
 
+#ifdef GG_ENABLE_SCRIPTS
+class ScriptEngine;
+class ScriptManager;
+#endif
+
 struct EngineConfig {
     std::string title = "Game-Gym Engine";
     uint32_t width = 1280;
@@ -20,6 +25,10 @@ struct EngineConfig {
     bool resizable = true;
     std::string shader_path = "shaders/triangle.wgsl";
     bool enable_mcp = false;
+#ifdef GG_ENABLE_SCRIPTS
+    bool enable_scripts = false;
+    std::string script_dir = "assets/scripts";
+#endif
 };
 
 class Engine {
@@ -55,6 +64,11 @@ private:
     std::unique_ptr<EditorUI> editor_;
     std::unique_ptr<McpServer> mcp_;
     std::unique_ptr<McpTransport> mcp_transport_;
+
+#ifdef GG_ENABLE_SCRIPTS
+    std::unique_ptr<ScriptEngine> script_engine_;
+    std::unique_ptr<ScriptManager> script_manager_;
+#endif
 };
 
 } // namespace gg
