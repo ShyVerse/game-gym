@@ -5,6 +5,9 @@ build/
 # wgpu-native prebuilt
 wgpu-native/
 
+# V8 prebuilt
+v8/
+
 # Dear ImGui source (fetched by scripts/setup-imgui.sh)
 third_party/imgui/
 

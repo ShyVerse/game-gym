@@ -10,6 +10,12 @@
 #include "renderer/gpu_context.h"
 #include "renderer/renderer.h"
 
+#ifdef GG_ENABLE_SCRIPTS
+#include "script/script_bindings.h"
+#include "script/script_engine.h"
+#include "script/script_manager.h"
+#endif
+
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -74,6 +80,20 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         engine->mcp_transport_->start();
     }
 
+#ifdef GG_ENABLE_SCRIPTS
+    if (config.enable_scripts) {
+        engine->script_engine_ = ScriptEngine::create();
+        if (!engine->script_engine_) {
+            throw std::runtime_error("Failed to create ScriptEngine (V8)");
+        }
+        register_script_bindings(*engine->script_engine_, *engine->world_, *engine->physics_);
+        engine->script_manager_ = ScriptManager::create(*engine->script_engine_, config.script_dir);
+        if (engine->script_manager_) {
+            engine->script_manager_->load_all();
+        }
+    }
+#endif
+
     return engine;
 }
 
@@ -95,6 +115,13 @@ void Engine::run() {
             }
         }
 
+#ifdef GG_ENABLE_SCRIPTS
+        if (script_manager_) {
+            script_manager_->poll_changes();
+            script_manager_->call_update(FIXED_DT);
+        }
+#endif
+
         // Physics step with bidirectional ECS sync
         physics_->step_with_ecs(FIXED_DT, world_->raw());
 
@@ -111,6 +138,12 @@ void Engine::run() {
             editor_->render(renderer_->render_pass());
             renderer_->end_frame();
         }
+
+#ifdef GG_ENABLE_SCRIPTS
+        if (script_engine_) {
+            script_engine_->idle_gc(0.002);
+        }
+#endif
     }
 }
 

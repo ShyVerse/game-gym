@@ -122,6 +122,35 @@ imgui_dep = declare_dependency(
   compile_args: ['-DIMGUI_IMPL_WEBGPU_BACKEND_WGPU'],
 )
 
+# --- V8 JavaScript engine (optional) ----------------------------------------
+enable_scripts = get_option('enable_scripts')
+if enable_scripts
+  v8_inc = include_directories('v8/include')
+  v8_lib = cpp.find_library('v8_monolith',
+    dirs: [meson.project_source_root() / 'v8' / 'lib'],
+    required: true)
+
+  if host_os == 'darwin'
+    v8_platform_deps = [
+      dependency('appleframeworks', modules: ['CoreFoundation', 'CoreServices']),
+    ]
+  elif host_os == 'linux'
+    v8_platform_deps = [
+      dependency('threads'),
+      cpp.find_library('dl', required: true),
+    ]
+  else
+    v8_platform_deps = []
+  endif
+
+  v8_dep = declare_dependency(
+    include_directories: v8_inc,
+    dependencies: [v8_lib] + v8_platform_deps,
+  )
+else
+  v8_dep = dependency('', required: false)
+endif
+
 subdir('engine')
 subdir('app')
 subdir('tests')

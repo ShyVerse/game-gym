@@ -1,2 +1,5 @@
 option('enable_tests', type: 'boolean', value: true,
   description: 'Build unit tests')
+
+option('enable_scripts', type: 'boolean', value: false,
+  description: 'Enable V8 scripting layer (requires v8/ directory from setup-v8.sh)')
