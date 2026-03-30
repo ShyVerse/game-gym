@@ -2,53 +2,42 @@
 set -euo pipefail
 
 VERSION="v24.0.3.1"
-BASE_URL="https://github.com/gfx-rs/wgpu-native/releases/download/${VERSION}"
-TARGET_DIR="$(cd "$(dirname "$0")/.." && pwd)/wgpu-native"
+DEST="wgpu-native"
 
-detect_platform() {
-  local os arch
-  os="$(uname -s)"
-  arch="$(uname -m)"
-
-  case "$os" in
-    Darwin)
-      case "$arch" in
-        arm64) echo "macos-aarch64" ;;
-        x86_64) echo "macos-x86_64" ;;
-      esac ;;
-    Linux)
-      case "$arch" in
-        x86_64) echo "linux-x86_64" ;;
-        aarch64) echo "linux-aarch64" ;;
-      esac ;;
-    MINGW*|MSYS*|CYGWIN*)
-      echo "windows-x86_64" ;;
-  esac
-}
-
-PLATFORM="$(detect_platform)"
-if [ -z "$PLATFORM" ]; then
-  echo "Error: unsupported platform $(uname -s)/$(uname -m)"
-  exit 1
+if [ -d "$DEST/lib" ] && [ -d "$DEST/include" ]; then
+    echo "wgpu-native already present at $DEST"
+    exit 0
 fi
 
-FILENAME="wgpu-${PLATFORM}-release.zip"
-URL="${BASE_URL}/${FILENAME}"
+# Detect OS
+case "$(uname -s)" in
+    Darwin)  OS="macos" ;;
+    Linux)   OS="linux" ;;
+    MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
+    *) echo "Unsupported OS: $(uname -s)"; exit 1 ;;
+esac
 
-echo "Downloading wgpu-native ${VERSION} for ${PLATFORM}..."
-mkdir -p "$TARGET_DIR"
-curl -L "$URL" -o "/tmp/${FILENAME}"
-unzip -o "/tmp/${FILENAME}" -d "$TARGET_DIR"
-rm "/tmp/${FILENAME}"
+# Detect architecture
+case "$(uname -m)" in
+    arm64|aarch64) ARCH="aarch64" ;;
+    x86_64|amd64)  ARCH="x86_64" ;;
+    *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
+esac
 
-mkdir -p "$TARGET_DIR/include" "$TARGET_DIR/lib"
-mv "$TARGET_DIR"/*.h "$TARGET_DIR/include/" 2>/dev/null || true
-mv "$TARGET_DIR"/*.a "$TARGET_DIR/lib/" 2>/dev/null || true
-mv "$TARGET_DIR"/*.dylib "$TARGET_DIR/lib/" 2>/dev/null || true
-mv "$TARGET_DIR"/*.so "$TARGET_DIR/lib/" 2>/dev/null || true
-mv "$TARGET_DIR"/*.dll "$TARGET_DIR/lib/" 2>/dev/null || true
-mv "$TARGET_DIR"/*.lib "$TARGET_DIR/lib/" 2>/dev/null || true
+ASSET="wgpu-${OS}-${ARCH}-release.zip"
+URL="https://github.com/gfx-rs/wgpu-native/releases/download/${VERSION}/${ASSET}"
 
-echo "wgpu-native installed to $TARGET_DIR"
-echo "  Headers: $TARGET_DIR/include/"
-echo "  Libs:    $TARGET_DIR/lib/"
+echo "Downloading wgpu-native ${VERSION} (${OS}-${ARCH}) ..."
+TMPDIR="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR"' EXIT
+
+curl -fSL --retry 3 -o "${TMPDIR}/${ASSET}" "$URL"
+
+echo "Extracting to ${DEST}/ ..."
+rm -rf "$DEST"
+mkdir -p "$DEST"
+unzip -q "${TMPDIR}/${ASSET}" -d "$DEST"
+
+echo "Done: wgpu-native ${VERSION} (${OS}-${ARCH}) at ${DEST}/"
+echo "  Headers: ${DEST}/include/webgpu/"
+echo "  Libraries: ${DEST}/lib/"

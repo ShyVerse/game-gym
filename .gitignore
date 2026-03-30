@@ -21,3 +21,17 @@ Thumbs.db
 
 # Superpowers brainstorm sessions
 .superpowers/
+
+# Design docs (internal)
+docs/
+
+# ImGui runtime config
+imgui.ini
+
+# Meson subproject downloads (fetched via wrap files)
+subprojects/flecs/
+subprojects/glfw/
+subprojects/gtest/
+subprojects/jolt/
+subprojects/nlohmann_json-*/
+subprojects/.wraplock
