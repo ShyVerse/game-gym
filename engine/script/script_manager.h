@@ -24,7 +24,7 @@ public:
     [[nodiscard]] size_t loaded_count() const;
 
 private:
-    ScriptManager();
+    ScriptManager(ScriptEngine& engine, std::string script_dir);
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };

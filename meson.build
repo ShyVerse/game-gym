@@ -132,7 +132,7 @@ if enable_scripts
 
   if host_os == 'darwin'
     v8_platform_deps = [
-      dependency('appleframeworks', modules: ['CoreFoundation']),
+      dependency('appleframeworks', modules: ['CoreFoundation', 'CoreServices']),
     ]
   elif host_os == 'linux'
     v8_platform_deps = [
