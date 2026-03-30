@@ -62,5 +62,23 @@ if get_option('enable_tests')
       dependencies: [engine_dep, gtest_dep, gtest_main_dep],
     )
     test('script_types', test_script_types)
+
+    test_script_bindings = executable('test_script_bindings',
+      'test_script_bindings.cpp',
+      dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+    )
+    test('script_bindings', test_script_bindings)
+
+    test_script_manager = executable('test_script_manager',
+      'test_script_manager.cpp',
+      dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+    )
+    test('script_manager', test_script_manager)
+
+    test_script_integration = executable('test_script_integration',
+      'test_script_integration.cpp',
+      dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+    )
+    test('script_integration', test_script_integration)
   endif
 endif
