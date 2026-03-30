@@ -1,10 +1,13 @@
 #pragma once
 
 #include "physics/physics_components.h"
+
 #include <memory>
 #include <vector>
 
-namespace flecs { struct world; }
+namespace flecs {
+struct world;
+}
 
 namespace gg {
 
@@ -25,7 +28,8 @@ public:
     void set_position(uint32_t body_id, const Vec3& pos);
     Vec3 get_position(uint32_t body_id) const;
     Quat get_rotation(uint32_t body_id) const;
-    bool raycast(const Vec3& origin, const Vec3& direction, float max_distance, RayHit& out_hit) const;
+    bool
+    raycast(const Vec3& origin, const Vec3& direction, float max_distance, RayHit& out_hit) const;
     const std::vector<ContactEvent>& contact_events() const;
 
 private:

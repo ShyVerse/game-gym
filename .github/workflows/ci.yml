@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format-18
+
+      - name: Check formatting
+        run: |
+          find engine/ app/ tests/ -name '*.h' -o -name '*.cpp' \
+            | xargs clang-format-18 --dry-run --Werror
+
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install meson ninja
+
+      - name: Setup wgpu-native
+        run: bash scripts/setup-wgpu.sh
+
+      - name: Setup Dear ImGui
+        run: bash scripts/setup-imgui.sh
+
+      - name: Configure
+        run: meson setup builddir
+
+      - name: Build
+        run: meson compile -C builddir
+
+      - name: Test
+        run: meson test -C builddir --print-errorlogs
+
+  lint:
+    name: Clang-Tidy
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install meson ninja llvm@18
+
+      - name: Setup wgpu-native
+        run: bash scripts/setup-wgpu.sh
+
+      - name: Setup Dear ImGui
+        run: bash scripts/setup-imgui.sh
+
+      - name: Configure
+        run: meson setup builddir
+
+      - name: Run clang-tidy
+        run: |
+          CLANG_TIDY="$(brew --prefix llvm@18)/bin/clang-tidy"
+          SDK_PATH="$(xcrun --show-sdk-path)"
+          find engine/ -name '*.cpp' \
+            | xargs "$CLANG_TIDY" -p builddir \
+              --extra-arg="-isysroot${SDK_PATH}"

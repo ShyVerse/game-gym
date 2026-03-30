@@ -1,7 +1,8 @@
 #include "mcp/mcp_server.h"
+
 #include <nlohmann/json.hpp>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace gg {
 
@@ -11,16 +12,15 @@ struct McpServer::Impl {
     std::vector<McpToolDef> tools;
 };
 
-McpServer::McpServer(std::string name, std::string version)
-    : impl_(std::make_unique<Impl>()) {
-    impl_->name    = std::move(name);
+McpServer::McpServer(std::string name, std::string version) : impl_(std::make_unique<Impl>()) {
+    impl_->name = std::move(name);
     impl_->version = std::move(version);
 }
 
 McpServer::~McpServer() = default;
 
 std::unique_ptr<McpServer> McpServer::create(const std::string& server_name,
-                                              const std::string& server_version) {
+                                             const std::string& server_version) {
     return std::unique_ptr<McpServer>(new McpServer(server_name, server_version));
 }
 
@@ -42,12 +42,12 @@ std::string McpServer::handle_message(const std::string& json_message) {
     } catch (const json::exception&) {
         json err;
         err["jsonrpc"] = "2.0";
-        err["id"]      = nullptr;
-        err["error"]   = {{"code", -32700}, {"message", "Parse error"}};
+        err["id"] = nullptr;
+        err["error"] = {{"code", -32700}, {"message", "Parse error"}};
         return err.dump();
     }
 
-    const auto id     = req.value("id", json{});
+    const auto id = req.value("id", json{});
     const auto method = req.value("method", std::string{});
 
     // Notifications (no id field) — no response needed
@@ -58,21 +58,21 @@ std::string McpServer::handle_message(const std::string& json_message) {
     auto make_error = [&](int code, const std::string& msg) {
         json r;
         r["jsonrpc"] = "2.0";
-        r["id"]      = id;
-        r["error"]   = {{"code", code}, {"message", msg}};
+        r["id"] = id;
+        r["error"] = {{"code", code}, {"message", msg}};
         return r.dump();
     };
 
     if (method == "initialize") {
         json result;
         result["protocolVersion"] = "2024-11-05";
-        result["serverInfo"]      = {{"name", impl_->name}, {"version", impl_->version}};
-        result["capabilities"]    = {{"tools", json::object()}};
+        result["serverInfo"] = {{"name", impl_->name}, {"version", impl_->version}};
+        result["capabilities"] = {{"tools", json::object()}};
 
         json resp;
         resp["jsonrpc"] = "2.0";
-        resp["id"]      = id;
-        resp["result"]  = result;
+        resp["id"] = id;
+        resp["result"] = result;
         return resp.dump();
     }
 
@@ -80,7 +80,7 @@ std::string McpServer::handle_message(const std::string& json_message) {
         json tools_array = json::array();
         for (const auto& tool : impl_->tools) {
             json t;
-            t["name"]        = tool.name;
+            t["name"] = tool.name;
             t["description"] = tool.description;
             try {
                 t["inputSchema"] = json::parse(tool.input_schema);
@@ -92,13 +92,13 @@ std::string McpServer::handle_message(const std::string& json_message) {
 
         json resp;
         resp["jsonrpc"] = "2.0";
-        resp["id"]      = id;
-        resp["result"]  = {{"tools", tools_array}};
+        resp["id"] = id;
+        resp["result"] = {{"tools", tools_array}};
         return resp.dump();
     }
 
     if (method == "tools/call") {
-        const auto params    = req.value("params", json::object());
+        const auto params = req.value("params", json::object());
         const auto tool_name = params.value("name", std::string{});
         const auto arguments = params.value("arguments", json::object());
 
@@ -126,8 +126,8 @@ std::string McpServer::handle_message(const std::string& json_message) {
 
         json resp;
         resp["jsonrpc"] = "2.0";
-        resp["id"]      = id;
-        resp["result"]  = {{"content", content}};
+        resp["id"] = id;
+        resp["result"] = {{"content", content}};
         return resp.dump();
     }
 

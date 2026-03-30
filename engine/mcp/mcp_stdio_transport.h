@@ -1,5 +1,6 @@
 #pragma once
 #include "mcp/mcp_transport.h"
+
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -26,10 +27,10 @@ private:
     McpStdioTransport() = default;
     void reader_loop();
 
-    std::thread          reader_thread_;
-    std::mutex           queue_mutex_;
+    std::thread reader_thread_;
+    std::mutex queue_mutex_;
     std::queue<std::string> request_queue_;
-    std::atomic<bool>    running_{false};
+    std::atomic<bool> running_{false};
 };
 
 } // namespace gg

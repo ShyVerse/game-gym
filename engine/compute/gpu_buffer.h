@@ -1,8 +1,8 @@
 #pragma once
 
-#include <webgpu/webgpu.h>
 #include <cstdint>
 #include <vector>
+#include <webgpu/webgpu.h>
 
 namespace gg {
 
@@ -34,13 +34,13 @@ public:
     [[nodiscard]] std::vector<uint8_t> readback(WGPUDevice device, WGPUQueue queue) const;
 
     [[nodiscard]] WGPUBuffer handle() const { return buffer_; }
-    [[nodiscard]] uint64_t   size()   const { return size_; }
+    [[nodiscard]] uint64_t size() const { return size_; }
 
 private:
     explicit GpuBuffer(WGPUBuffer buffer, uint64_t size);
 
     WGPUBuffer buffer_ = nullptr;
-    uint64_t   size_   = 0;
+    uint64_t size_ = 0;
 };
 
 } // namespace gg

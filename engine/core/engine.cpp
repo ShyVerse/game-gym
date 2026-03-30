@@ -1,13 +1,14 @@
 #include "core/engine.h"
+
 #include "core/window.h"
-#include "renderer/gpu_context.h"
-#include "renderer/renderer.h"
 #include "ecs/world.h"
-#include "physics/physics_world.h"
 #include "editor/editor_ui.h"
 #include "mcp/mcp_server.h"
-#include "mcp/mcp_tools.h"
 #include "mcp/mcp_stdio_transport.h"
+#include "mcp/mcp_tools.h"
+#include "physics/physics_world.h"
+#include "renderer/gpu_context.h"
+#include "renderer/renderer.h"
 
 #include <fstream>
 #include <sstream>
@@ -31,9 +32,9 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
     auto engine = std::unique_ptr<Engine>(new Engine());
 
     engine->window_ = Window::create({
-        .title     = config.title,
-        .width     = config.width,
-        .height    = config.height,
+        .title = config.title,
+        .width = config.width,
+        .height = config.height,
         .resizable = config.resizable,
     });
     if (!engine->window_) {
@@ -113,8 +114,14 @@ void Engine::run() {
     }
 }
 
-World& Engine::world() { return *world_; }
-PhysicsWorld& Engine::physics() { return *physics_; }
-GpuContext& Engine::gpu() { return *gpu_; }
+World& Engine::world() {
+    return *world_;
+}
+PhysicsWorld& Engine::physics() {
+    return *physics_;
+}
+GpuContext& Engine::gpu() {
+    return *gpu_;
+}
 
 } // namespace gg

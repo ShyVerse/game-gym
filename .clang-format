@@ -1,0 +1,47 @@
+BasedOnStyle: LLVM
+
+Language: Cpp
+Standard: c++20
+ColumnLimit: 100
+
+# Indentation
+IndentWidth: 4
+ContinuationIndentWidth: 4
+NamespaceIndentation: None
+IndentCaseLabels: false
+AccessModifierOffset: -4
+
+# Braces
+BreakBeforeBraces: Attach
+Cpp11BracedListStyle: true
+
+# Pointers & References
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Short forms
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Empty
+
+# Includes
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Project headers (engine/)
+  - Regex: '^"'
+    Priority: 1
+  # System / third-party
+  - Regex: '^<'
+    Priority: 2
+
+# Misc
+SpaceAfterCStyleCast: false
+SpaceBeforeParens: ControlStatements
+SpacesInAngles: Never
+AlignAfterOpenBracket: Align
+BinPackArguments: false
+BinPackParameters: false
+PackConstructorInitializers: NextLine
+BreakConstructorInitializers: BeforeComma

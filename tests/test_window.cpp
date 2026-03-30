@@ -1,5 +1,6 @@
-#include <gtest/gtest.h>
 #include "core/window.h"
+
+#include <gtest/gtest.h>
 
 TEST(WindowTest, CreatesWithValidDimensions) {
     gg::WindowConfig config{

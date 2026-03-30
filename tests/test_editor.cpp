@@ -12,12 +12,12 @@
 // The tests gate on GLFW availability: on a headless CI machine without a
 // display the window creation will fail gracefully and the tests are skipped.
 
+#include "core/window.h"
 #include "editor/editor_ui.h"
 #include "renderer/gpu_context.h"
-#include "core/window.h"
 
-#include <imgui.h>
 #include <GLFW/glfw3.h>
+#include <imgui.h>
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -26,17 +26,22 @@
 namespace {
 
 struct TestFixture {
-    std::unique_ptr<gg::Window>     window;
+    std::unique_ptr<gg::Window> window;
     std::unique_ptr<gg::GpuContext> gpu;
-    std::unique_ptr<gg::EditorUI>   editor;
+    std::unique_ptr<gg::EditorUI> editor;
 
     // Returns false if the environment cannot support a GPU window (headless).
     bool init() {
-        window = gg::Window::create({.title = "test", .width = 64, .height = 64, .resizable = false});
-        if (!window) { return false; }
+        window =
+            gg::Window::create({.title = "test", .width = 64, .height = 64, .resizable = false});
+        if (!window) {
+            return false;
+        }
 
         gpu = gg::GpuContext::create(*window);
-        if (!gpu) { return false; }
+        if (!gpu) {
+            return false;
+        }
 
         editor = gg::EditorUI::create(window->native_handle(), *gpu);
         return editor != nullptr;
@@ -49,8 +54,7 @@ struct TestFixture {
 // Test 1: CreateAndDestroy
 // ---------------------------------------------------------------------------
 
-TEST(EditorUITest, CreateAndDestroy)
-{
+TEST(EditorUITest, CreateAndDestroy) {
     TestFixture f;
     if (!f.init()) {
         GTEST_SKIP() << "Headless environment: skipping GPU-dependent test";
@@ -63,8 +67,7 @@ TEST(EditorUITest, CreateAndDestroy)
 // Test 2: VisibilityToggle
 // ---------------------------------------------------------------------------
 
-TEST(EditorUITest, VisibilityToggle)
-{
+TEST(EditorUITest, VisibilityToggle) {
     TestFixture f;
     if (!f.init()) {
         GTEST_SKIP() << "Headless environment: skipping GPU-dependent test";
@@ -84,8 +87,7 @@ TEST(EditorUITest, VisibilityToggle)
 // Test 3: BeginFrameDoesNotCrash
 // ---------------------------------------------------------------------------
 
-TEST(EditorUITest, BeginFrameDoesNotCrash)
-{
+TEST(EditorUITest, BeginFrameDoesNotCrash) {
     TestFixture f;
     if (!f.init()) {
         GTEST_SKIP() << "Headless environment: skipping GPU-dependent test";

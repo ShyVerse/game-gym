@@ -1,9 +1,9 @@
 #pragma once
 
-#include <webgpu/webgpu.h>
 #include <memory>
 #include <string>
 #include <vector>
+#include <webgpu/webgpu.h>
 
 namespace gg {
 
@@ -13,10 +13,9 @@ namespace gg {
 class ComputePipeline {
 public:
     /// Create a compute pipeline from WGSL shader source.
-    static std::unique_ptr<ComputePipeline> create(
-        WGPUDevice device,
-        const std::string& shader_source,
-        const std::string& entry_point = "main");
+    static std::unique_ptr<ComputePipeline> create(WGPUDevice device,
+                                                   const std::string& shader_source,
+                                                   const std::string& entry_point = "main");
 
     ~ComputePipeline();
 

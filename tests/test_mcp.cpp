@@ -1,10 +1,11 @@
-#include <gtest/gtest.h>
+#include "ecs/components.h"
+#include "ecs/world.h"
 #include "mcp/mcp_server.h"
 #include "mcp/mcp_tools.h"
-#include "ecs/world.h"
-#include "ecs/components.h"
-#include "physics/physics_world.h"
 #include "physics/physics_components.h"
+#include "physics/physics_world.h"
+
+#include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -34,13 +35,13 @@ TEST(McpServerTest, HandlesToolsList) {
     auto server = gg::McpServer::create("test", "1.0");
 
     gg::McpToolDef tool;
-    tool.name         = "dummy_tool";
-    tool.description  = "A test tool";
+    tool.name = "dummy_tool";
+    tool.description = "A test tool";
     tool.input_schema = R"({"type":"object"})";
-    tool.handler      = [](const std::string&) { return R"({"ok":true})"; };
+    tool.handler = [](const std::string&) { return R"({"ok":true})"; };
     server->register_tool(std::move(tool));
 
-    const std::string req  = R"({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -60,10 +61,10 @@ TEST(McpServerTest, HandlesToolsCall) {
     auto server = gg::McpServer::create("test", "1.0");
 
     gg::McpToolDef tool;
-    tool.name         = "echo";
-    tool.description  = "Echoes args back";
+    tool.name = "echo";
+    tool.description = "Echoes args back";
     tool.input_schema = R"({"type":"object"})";
-    tool.handler      = [](const std::string& args) { return args; };
+    tool.handler = [](const std::string& args) { return args; };
     server->register_tool(std::move(tool));
 
     const std::string req = R"({"jsonrpc":"2.0","id":3,"method":"tools/call",)"
@@ -83,7 +84,7 @@ TEST(McpServerTest, HandlesToolsCall) {
 TEST(McpServerTest, HandlesUnknownMethod) {
     auto server = gg::McpServer::create("test", "1.0");
 
-    const std::string req  = R"({"jsonrpc":"2.0","id":4,"method":"nonexistent","params":{}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":4,"method":"nonexistent","params":{}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -108,9 +109,9 @@ TEST(McpServerTest, HandlesUnknownTool) {
 // ---------------------------------------------------------------------------
 
 TEST(McpToolsTest, ListEntities) {
-    auto world   = gg::World::create();
+    auto world = gg::World::create();
     auto physics = gg::PhysicsWorld::create({});
-    auto server  = gg::McpServer::create("test", "1.0");
+    auto server = gg::McpServer::create("test", "1.0");
 
     gg::register_mcp_tools(*server, *world, *physics);
 
@@ -123,7 +124,8 @@ TEST(McpToolsTest, ListEntities) {
     e2.set<gg::Name>({"beta"});
     e2.set<gg::Transform>({});
 
-    const std::string req  = R"({"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"list_entities","arguments":{}}})";
+    const std::string req =
+        R"({"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"list_entities","arguments":{}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -132,20 +134,22 @@ TEST(McpToolsTest, ListEntities) {
     auto arr = nlohmann::json::parse(text);
 
     bool found_alpha = false;
-    bool found_beta  = false;
+    bool found_beta = false;
     for (const auto& entry : arr) {
         const auto name = entry["name"].get<std::string>();
-        if (name == "alpha") found_alpha = true;
-        if (name == "beta")  found_beta  = true;
+        if (name == "alpha")
+            found_alpha = true;
+        if (name == "beta")
+            found_beta = true;
     }
     EXPECT_TRUE(found_alpha);
     EXPECT_TRUE(found_beta);
 }
 
 TEST(McpToolsTest, CreateEntity) {
-    auto world   = gg::World::create();
+    auto world = gg::World::create();
     auto physics = gg::PhysicsWorld::create({});
-    auto server  = gg::McpServer::create("test", "1.0");
+    auto server = gg::McpServer::create("test", "1.0");
 
     gg::register_mcp_tools(*server, *world, *physics);
 
@@ -159,15 +163,16 @@ TEST(McpToolsTest, CreateEntity) {
     // Verify the entity was created with a Name component
     bool found = false;
     world->raw().each([&](flecs::entity, const gg::Name& n) {
-        if (n.value == "spawned") found = true;
+        if (n.value == "spawned")
+            found = true;
     });
     EXPECT_TRUE(found);
 }
 
 TEST(McpToolsTest, SetTransform) {
-    auto world   = gg::World::create();
+    auto world = gg::World::create();
     auto physics = gg::PhysicsWorld::create({});
-    auto server  = gg::McpServer::create("test", "1.0");
+    auto server = gg::McpServer::create("test", "1.0");
 
     gg::register_mcp_tools(*server, *world, *physics);
 
@@ -178,8 +183,9 @@ TEST(McpToolsTest, SetTransform) {
     t0.position = {0.0f, 0.0f, 0.0f};
     e.set<gg::Transform>(t0);
 
-    const std::string req = R"({"jsonrpc":"2.0","id":12,"method":"tools/call",)"
-                            R"("params":{"name":"set_transform","arguments":{"name":"mover","position":{"x":5.0,"y":3.0,"z":1.0}}}})";
+    const std::string req =
+        R"({"jsonrpc":"2.0","id":12,"method":"tools/call",)"
+        R"("params":{"name":"set_transform","arguments":{"name":"mover","position":{"x":5.0,"y":3.0,"z":1.0}}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -193,24 +199,25 @@ TEST(McpToolsTest, SetTransform) {
 }
 
 TEST(McpToolsTest, Raycast) {
-    auto world   = gg::World::create();
+    auto world = gg::World::create();
     auto physics = gg::PhysicsWorld::create({});
-    auto server  = gg::McpServer::create("test", "1.0");
+    auto server = gg::McpServer::create("test", "1.0");
 
     gg::register_mcp_tools(*server, *world, *physics);
 
     // Add a static body to hit
     gg::BodyDef def;
-    def.shape       = gg::BoxShapeDesc{5.0f, 5.0f, 5.0f};
+    def.shape = gg::BoxShapeDesc{5.0f, 5.0f, 5.0f};
     def.motion_type = gg::MotionType::Static;
-    def.layer       = gg::PhysicsLayer::Static;
+    def.layer = gg::PhysicsLayer::Static;
     physics->add_body({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f, 1.0f}, def);
 
     // Settle broadphase
     physics->step(0.0f);
 
-    const std::string req = R"({"jsonrpc":"2.0","id":13,"method":"tools/call",)"
-                            R"("params":{"name":"raycast","arguments":{"origin":{"x":0,"y":0,"z":-20},"direction":{"x":0,"y":0,"z":1},"max_distance":100}}})";
+    const std::string req =
+        R"({"jsonrpc":"2.0","id":13,"method":"tools/call",)"
+        R"("params":{"name":"raycast","arguments":{"origin":{"x":0,"y":0,"z":-20},"direction":{"x":0,"y":0,"z":1},"max_distance":100}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
