@@ -14,12 +14,12 @@ class McpServer;
 class McpTransport;
 
 struct EngineConfig {
-    std::string title       = "Game-Gym Engine";
-    uint32_t    width       = 1280;
-    uint32_t    height      = 720;
-    bool        resizable   = true;
+    std::string title = "Game-Gym Engine";
+    uint32_t width = 1280;
+    uint32_t height = 720;
+    bool resizable = true;
     std::string shader_path = "shaders/triangle.wgsl";
-    bool        enable_mcp  = false;
+    bool enable_mcp = false;
 };
 
 class Engine {
@@ -47,13 +47,13 @@ private:
     Engine() = default;
     static std::string read_file(const std::string& path);
 
-    std::unique_ptr<Window>       window_;
-    std::unique_ptr<GpuContext>   gpu_;
-    std::unique_ptr<Renderer>     renderer_;
-    std::unique_ptr<World>        world_;
+    std::unique_ptr<Window> window_;
+    std::unique_ptr<GpuContext> gpu_;
+    std::unique_ptr<Renderer> renderer_;
+    std::unique_ptr<World> world_;
     std::unique_ptr<PhysicsWorld> physics_;
-    std::unique_ptr<EditorUI>     editor_;
-    std::unique_ptr<McpServer>    mcp_;
+    std::unique_ptr<EditorUI> editor_;
+    std::unique_ptr<McpServer> mcp_;
     std::unique_ptr<McpTransport> mcp_transport_;
 };
 

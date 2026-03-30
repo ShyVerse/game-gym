@@ -1,12 +1,12 @@
 #include "renderer/gpu_context.h"
+
 #include "core/window.h"
 
-#include <glfw3webgpu.h>
 #include <GLFW/glfw3.h>
-
-#include <stdexcept>
 #include <cstdio>
 #include <cstring>
+#include <glfw3webgpu.h>
+#include <stdexcept>
 
 namespace gg {
 
@@ -23,8 +23,7 @@ static void on_adapter(WGPURequestAdapterStatus status,
                        WGPUAdapter adapter,
                        WGPUStringView message,
                        void* userdata1,
-                       void* /*userdata2*/)
-{
+                       void* /*userdata2*/) {
     auto* result = static_cast<AdapterResult*>(userdata1);
     if (status == WGPURequestAdapterStatus_Success) {
         result->adapter = adapter;
@@ -44,8 +43,7 @@ static void on_device(WGPURequestDeviceStatus status,
                       WGPUDevice device,
                       WGPUStringView message,
                       void* userdata1,
-                      void* /*userdata2*/)
-{
+                      void* /*userdata2*/) {
     auto* result = static_cast<DeviceResult*>(userdata1);
     if (status == WGPURequestDeviceStatus_Success) {
         result->device = device;
@@ -60,30 +58,27 @@ static void on_uncaptured_error(WGPUDevice const* /*device*/,
                                 WGPUErrorType type,
                                 WGPUStringView message,
                                 void* /*userdata1*/,
-                                void* /*userdata2*/)
-{
+                                void* /*userdata2*/) {
     const char* msg = (message.data && message.length > 0) ? message.data : "(no message)";
-    std::fprintf(stderr, "[GpuContext] Uncaptured error (type=%d): %s\n",
-                 static_cast<int>(type), msg);
+    std::fprintf(
+        stderr, "[GpuContext] Uncaptured error (type=%d): %s\n", static_cast<int>(type), msg);
 }
 
 static void on_device_lost(WGPUDevice const* /*device*/,
                            WGPUDeviceLostReason reason,
                            WGPUStringView message,
                            void* /*userdata1*/,
-                           void* /*userdata2*/)
-{
+                           void* /*userdata2*/) {
     const char* msg = (message.data && message.length > 0) ? message.data : "(no message)";
-    std::fprintf(stderr, "[GpuContext] Device lost (reason=%d): %s\n",
-                 static_cast<int>(reason), msg);
+    std::fprintf(
+        stderr, "[GpuContext] Device lost (reason=%d): %s\n", static_cast<int>(reason), msg);
 }
 
 // ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
 
-std::unique_ptr<GpuContext> GpuContext::create(const Window& window)
-{
+std::unique_ptr<GpuContext> GpuContext::create(const Window& window) {
     auto ctx = std::unique_ptr<GpuContext>(new GpuContext());
 
     // 1. Instance
@@ -102,20 +97,20 @@ std::unique_ptr<GpuContext> GpuContext::create(const Window& window)
 
     // 3. Adapter
     WGPURequestAdapterOptions adapter_opts{};
-    adapter_opts.nextInChain       = nullptr;
-    adapter_opts.featureLevel      = WGPUFeatureLevel_Core;
-    adapter_opts.powerPreference   = WGPUPowerPreference_HighPerformance;
+    adapter_opts.nextInChain = nullptr;
+    adapter_opts.featureLevel = WGPUFeatureLevel_Core;
+    adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
     adapter_opts.forceFallbackAdapter = false;
-    adapter_opts.backendType       = WGPUBackendType_Undefined;
+    adapter_opts.backendType = WGPUBackendType_Undefined;
     adapter_opts.compatibleSurface = ctx->surface_;
 
     AdapterResult adapter_result{};
     WGPURequestAdapterCallbackInfo adapter_cb{};
     adapter_cb.nextInChain = nullptr;
-    adapter_cb.mode        = WGPUCallbackMode_AllowSpontaneous;
-    adapter_cb.callback    = on_adapter;
-    adapter_cb.userdata1   = &adapter_result;
-    adapter_cb.userdata2   = nullptr;
+    adapter_cb.mode = WGPUCallbackMode_AllowSpontaneous;
+    adapter_cb.callback = on_adapter;
+    adapter_cb.userdata1 = &adapter_result;
+    adapter_cb.userdata2 = nullptr;
 
     wgpuInstanceRequestAdapter(ctx->instance_, &adapter_opts, adapter_cb);
 
@@ -127,31 +122,31 @@ std::unique_ptr<GpuContext> GpuContext::create(const Window& window)
 
     // 4. Device
     WGPUDeviceDescriptor dev_desc{};
-    dev_desc.nextInChain           = nullptr;
-    dev_desc.label                 = {.data = "gg-device", .length = WGPU_STRLEN};
-    dev_desc.requiredFeatureCount  = 0;
-    dev_desc.requiredFeatures      = nullptr;
-    dev_desc.requiredLimits        = nullptr;
-    dev_desc.defaultQueue.label    = {.data = "gg-queue", .length = WGPU_STRLEN};
+    dev_desc.nextInChain = nullptr;
+    dev_desc.label = {.data = "gg-device", .length = WGPU_STRLEN};
+    dev_desc.requiredFeatureCount = 0;
+    dev_desc.requiredFeatures = nullptr;
+    dev_desc.requiredLimits = nullptr;
+    dev_desc.defaultQueue.label = {.data = "gg-queue", .length = WGPU_STRLEN};
 
     dev_desc.deviceLostCallbackInfo.nextInChain = nullptr;
-    dev_desc.deviceLostCallbackInfo.mode        = WGPUCallbackMode_AllowSpontaneous;
-    dev_desc.deviceLostCallbackInfo.callback    = on_device_lost;
-    dev_desc.deviceLostCallbackInfo.userdata1   = nullptr;
-    dev_desc.deviceLostCallbackInfo.userdata2   = nullptr;
+    dev_desc.deviceLostCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    dev_desc.deviceLostCallbackInfo.callback = on_device_lost;
+    dev_desc.deviceLostCallbackInfo.userdata1 = nullptr;
+    dev_desc.deviceLostCallbackInfo.userdata2 = nullptr;
 
     dev_desc.uncapturedErrorCallbackInfo.nextInChain = nullptr;
-    dev_desc.uncapturedErrorCallbackInfo.callback    = on_uncaptured_error;
-    dev_desc.uncapturedErrorCallbackInfo.userdata1   = nullptr;
-    dev_desc.uncapturedErrorCallbackInfo.userdata2   = nullptr;
+    dev_desc.uncapturedErrorCallbackInfo.callback = on_uncaptured_error;
+    dev_desc.uncapturedErrorCallbackInfo.userdata1 = nullptr;
+    dev_desc.uncapturedErrorCallbackInfo.userdata2 = nullptr;
 
     DeviceResult device_result{};
     WGPURequestDeviceCallbackInfo device_cb{};
     device_cb.nextInChain = nullptr;
-    device_cb.mode        = WGPUCallbackMode_AllowSpontaneous;
-    device_cb.callback    = on_device;
-    device_cb.userdata1   = &device_result;
-    device_cb.userdata2   = nullptr;
+    device_cb.mode = WGPUCallbackMode_AllowSpontaneous;
+    device_cb.callback = on_device;
+    device_cb.userdata1 = &device_result;
+    device_cb.userdata2 = nullptr;
 
     wgpuAdapterRequestDevice(ctx->adapter_, &dev_desc, device_cb);
 
@@ -167,7 +162,7 @@ std::unique_ptr<GpuContext> GpuContext::create(const Window& window)
     }
 
     // 6. Surface format & configure
-    ctx->surface_width_  = window.width();
+    ctx->surface_width_ = window.width();
     ctx->surface_height_ = window.height();
 
     WGPUSurfaceCapabilities caps{};
@@ -189,19 +184,18 @@ std::unique_ptr<GpuContext> GpuContext::create(const Window& window)
 // Surface configuration
 // ---------------------------------------------------------------------------
 
-void GpuContext::configure_surface()
-{
+void GpuContext::configure_surface() {
     WGPUSurfaceConfiguration config{};
-    config.nextInChain  = nullptr;
-    config.device       = device_;
-    config.format       = surface_format_;
-    config.usage        = WGPUTextureUsage_RenderAttachment;
-    config.width        = surface_width_;
-    config.height       = surface_height_;
+    config.nextInChain = nullptr;
+    config.device = device_;
+    config.format = surface_format_;
+    config.usage = WGPUTextureUsage_RenderAttachment;
+    config.width = surface_width_;
+    config.height = surface_height_;
     config.viewFormatCount = 0;
-    config.viewFormats  = nullptr;
-    config.alphaMode    = WGPUCompositeAlphaMode_Auto;
-    config.presentMode  = WGPUPresentMode_Fifo;
+    config.viewFormats = nullptr;
+    config.alphaMode = WGPUCompositeAlphaMode_Auto;
+    config.presentMode = WGPUPresentMode_Fifo;
     wgpuSurfaceConfigure(surface_, &config);
 }
 
@@ -209,9 +203,8 @@ void GpuContext::configure_surface()
 // Resize
 // ---------------------------------------------------------------------------
 
-void GpuContext::resize(uint32_t w, uint32_t h)
-{
-    surface_width_  = w;
+void GpuContext::resize(uint32_t w, uint32_t h) {
+    surface_width_ = w;
     surface_height_ = h;
     configure_surface();
 }
@@ -220,16 +213,30 @@ void GpuContext::resize(uint32_t w, uint32_t h)
 // Destructor
 // ---------------------------------------------------------------------------
 
-GpuContext::~GpuContext()
-{
+GpuContext::~GpuContext() {
     if (surface_ && device_) {
         wgpuSurfaceUnconfigure(surface_);
     }
-    if (queue_)   { wgpuQueueRelease(queue_);     queue_   = nullptr; }
-    if (device_)  { wgpuDeviceRelease(device_);   device_  = nullptr; }
-    if (adapter_) { wgpuAdapterRelease(adapter_); adapter_ = nullptr; }
-    if (surface_) { wgpuSurfaceRelease(surface_); surface_ = nullptr; }
-    if (instance_){ wgpuInstanceRelease(instance_); instance_ = nullptr; }
+    if (queue_) {
+        wgpuQueueRelease(queue_);
+        queue_ = nullptr;
+    }
+    if (device_) {
+        wgpuDeviceRelease(device_);
+        device_ = nullptr;
+    }
+    if (adapter_) {
+        wgpuAdapterRelease(adapter_);
+        adapter_ = nullptr;
+    }
+    if (surface_) {
+        wgpuSurfaceRelease(surface_);
+        surface_ = nullptr;
+    }
+    if (instance_) {
+        wgpuInstanceRelease(instance_);
+        instance_ = nullptr;
+    }
 }
 
 } // namespace gg

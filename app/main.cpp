@@ -9,10 +9,10 @@ int main(int argc, char* argv[]) {
 
     try {
         auto engine = gg::Engine::create({
-            .title       = "Game-Gym Engine",
-            .width       = 1280,
-            .height      = 720,
-            .resizable   = true,
+            .title = "Game-Gym Engine",
+            .width = 1280,
+            .height = 720,
+            .resizable = true,
             .shader_path = shader_path,
         });
         engine->run();

@@ -1,6 +1,7 @@
-#include <gtest/gtest.h>
 #include "ecs/components.h"
 #include "ecs/world.h"
+
+#include <gtest/gtest.h>
 
 // ---------------------------------------------------------------------------
 // Component default value tests
@@ -68,10 +69,8 @@ TEST(WorldTest, QueryFindsMatchingEntities) {
 
     int count = 0;
     // Use query builder: match Transform + Renderable tag.
-    world->raw().query_builder<gg::Transform>()
-        .with<gg::Renderable>()
-        .build()
-        .each([&count](gg::Transform&) { ++count; });
+    world->raw().query_builder<gg::Transform>().with<gg::Renderable>().build().each(
+        [&count](gg::Transform&) { ++count; });
     EXPECT_EQ(count, 1);
 }
 

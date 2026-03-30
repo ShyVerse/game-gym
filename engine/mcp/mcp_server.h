@@ -9,14 +9,14 @@ namespace gg {
 struct McpToolDef {
     std::string name;
     std::string description;
-    std::string input_schema;  // JSON Schema string
+    std::string input_schema; // JSON Schema string
     std::function<std::string(const std::string& args_json)> handler;
 };
 
 class McpServer {
 public:
     static std::unique_ptr<McpServer> create(const std::string& server_name,
-                                              const std::string& server_version);
+                                             const std::string& server_version);
     ~McpServer();
     McpServer(const McpServer&) = delete;
     McpServer& operator=(const McpServer&) = delete;

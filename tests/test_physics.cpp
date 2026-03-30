@@ -1,9 +1,10 @@
-#include <gtest/gtest.h>
-#include "physics/physics_layers.h"
-#include "physics/physics_world.h"
+#include "ecs/components.h"
 #include "ecs/world.h"
 #include "physics/physics_components.h"
-#include "ecs/components.h"
+#include "physics/physics_layers.h"
+#include "physics/physics_world.h"
+
+#include <gtest/gtest.h>
 
 // ---------------------------------------------------------------------------
 // Task 2: Physics Layer / Collision Filter Tests
@@ -93,7 +94,7 @@ TEST(PhysicsBodyTest, RemoveBody) {
     def.motion_type = gg::MotionType::Dynamic;
     uint32_t id = pw->add_body({0, 10, 0}, {0, 0, 0, 1}, def);
     ASSERT_NE(id, UINT32_MAX);
-    pw->remove_body(id);  // Should not crash
+    pw->remove_body(id); // Should not crash
 }
 
 TEST(PhysicsBodyTest, DynamicBodyFallsUnderGravity) {
@@ -258,7 +259,7 @@ TEST(PhysicsRaycastTest, HitsStaticBody) {
     def.layer = gg::PhysicsLayer::Static;
     pw->add_body({0, 0, 0}, {0, 0, 0, 1}, def);
 
-    pw->step(0.0f);  // Let broadphase settle
+    pw->step(0.0f); // Let broadphase settle
 
     gg::RayHit hit;
     bool did_hit = pw->raycast({0, 0, -20}, {0, 0, 1}, 100.0f, hit);
@@ -308,7 +309,8 @@ TEST(PhysicsContactTest, DetectsCollision) {
                 found_contact = true;
             }
         }
-        if (found_contact) break;
+        if (found_contact)
+            break;
     }
     EXPECT_TRUE(found_contact);
 }
@@ -340,7 +342,8 @@ TEST(PhysicsContactTest, TriggerDetectsDynamic) {
                 found_trigger = true;
             }
         }
-        if (found_trigger) break;
+        if (found_trigger)
+            break;
     }
     EXPECT_TRUE(found_trigger);
 }

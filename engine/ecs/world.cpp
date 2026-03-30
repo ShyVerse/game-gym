@@ -1,10 +1,10 @@
 #include "ecs/world.h"
+
 #include "ecs/systems.h"
 
 namespace gg {
 
-World::World(flecs::world world)
-    : world_(std::move(world)) {}
+World::World(flecs::world world) : world_(std::move(world)) {}
 
 std::unique_ptr<World> World::create() {
     flecs::world w;

@@ -1,11 +1,13 @@
 #include "mcp/mcp_tools.h"
-#include "mcp/mcp_server.h"
-#include "ecs/world.h"
+
 #include "ecs/components.h"
-#include "physics/physics_world.h"
+#include "ecs/world.h"
+#include "mcp/mcp_server.h"
 #include "physics/physics_components.h"
-#include <nlohmann/json.hpp>
+#include "physics/physics_world.h"
+
 #include <flecs.h>
+#include <nlohmann/json.hpp>
 #include <string>
 
 namespace gg {
@@ -33,11 +35,7 @@ std::string list_entities_handler(World& world, const std::string& /*args_json*/
 
         const auto* t = e.get<Transform>();
         if (t) {
-            entry["position"] = {
-                {"x", t->position.x},
-                {"y", t->position.y},
-                {"z", t->position.z}
-            };
+            entry["position"] = {{"x", t->position.x}, {"y", t->position.y}, {"z", t->position.z}};
         }
         result.push_back(entry);
     });
@@ -68,9 +66,9 @@ std::string get_entity_handler(World& world, const std::string& args_json) {
     const auto* t = entity.get<Transform>();
     if (t) {
         info["position"] = {{"x", t->position.x}, {"y", t->position.y}, {"z", t->position.z}};
-        info["rotation"] = {{"x", t->rotation.x}, {"y", t->rotation.y},
-                            {"z", t->rotation.z}, {"w", t->rotation.w}};
-        info["scale"]    = {{"x", t->scale.x}, {"y", t->scale.y}, {"z", t->scale.z}};
+        info["rotation"] = {
+            {"x", t->rotation.x}, {"y", t->rotation.y}, {"z", t->rotation.z}, {"w", t->rotation.w}};
+        info["scale"] = {{"x", t->scale.x}, {"y", t->scale.y}, {"z", t->scale.z}};
     }
 
     const auto* v = entity.get<Velocity>();
@@ -227,10 +225,10 @@ std::string raycast_handler(PhysicsWorld& physics, const std::string& args_json)
     json result;
     result["hit"] = did_hit;
     if (did_hit) {
-        result["body_id"]  = hit.body_id;
+        result["body_id"] = hit.body_id;
         result["fraction"] = hit.fraction;
-        result["point"]    = {{"x", hit.point.x}, {"y", hit.point.y}, {"z", hit.point.z}};
-        result["normal"]   = {{"x", hit.normal.x}, {"y", hit.normal.y}, {"z", hit.normal.z}};
+        result["point"] = {{"x", hit.point.x}, {"y", hit.point.y}, {"z", hit.point.z}};
+        result["normal"] = {{"x", hit.normal.x}, {"y", hit.normal.y}, {"z", hit.normal.z}};
     }
     return result.dump();
 }
@@ -238,47 +236,41 @@ std::string raycast_handler(PhysicsWorld& physics, const std::string& args_json)
 } // anonymous namespace
 
 void register_mcp_tools(McpServer& server, World& world, PhysicsWorld& physics) {
-    server.register_tool({
-        "list_entities",
-        "List all entities in the world with their positions",
-        R"({"type":"object","properties":{}})",
-        [&world](const std::string& args) { return list_entities_handler(world, args); }
-    });
+    server.register_tool(
+        {"list_entities",
+         "List all entities in the world with their positions",
+         R"({"type":"object","properties":{}})",
+         [&world](const std::string& args) { return list_entities_handler(world, args); }});
 
-    server.register_tool({
-        "get_entity",
-        "Get detailed info about an entity by name",
-        R"({"type":"object","properties":{"name":{"type":"string"}},"required":["name"]})",
-        [&world](const std::string& args) { return get_entity_handler(world, args); }
-    });
+    server.register_tool(
+        {"get_entity",
+         "Get detailed info about an entity by name",
+         R"({"type":"object","properties":{"name":{"type":"string"}},"required":["name"]})",
+         [&world](const std::string& args) { return get_entity_handler(world, args); }});
 
-    server.register_tool({
-        "create_entity",
-        "Create a new entity with a name and optional position",
-        R"({"type":"object","properties":{"name":{"type":"string"},"position":{"type":"object"}},"required":["name"]})",
-        [&world](const std::string& args) { return create_entity_handler(world, args); }
-    });
+    server.register_tool(
+        {"create_entity",
+         "Create a new entity with a name and optional position",
+         R"({"type":"object","properties":{"name":{"type":"string"},"position":{"type":"object"}},"required":["name"]})",
+         [&world](const std::string& args) { return create_entity_handler(world, args); }});
 
-    server.register_tool({
-        "set_transform",
-        "Set the transform (position/rotation/scale) of an entity by name",
-        R"({"type":"object","properties":{"name":{"type":"string"},"position":{"type":"object"},"rotation":{"type":"object"},"scale":{"type":"object"}},"required":["name"]})",
-        [&world](const std::string& args) { return set_transform_handler(world, args); }
-    });
+    server.register_tool(
+        {"set_transform",
+         "Set the transform (position/rotation/scale) of an entity by name",
+         R"({"type":"object","properties":{"name":{"type":"string"},"position":{"type":"object"},"rotation":{"type":"object"},"scale":{"type":"object"}},"required":["name"]})",
+         [&world](const std::string& args) { return set_transform_handler(world, args); }});
 
-    server.register_tool({
-        "remove_entity",
-        "Remove an entity by name",
-        R"({"type":"object","properties":{"name":{"type":"string"}},"required":["name"]})",
-        [&world](const std::string& args) { return remove_entity_handler(world, args); }
-    });
+    server.register_tool(
+        {"remove_entity",
+         "Remove an entity by name",
+         R"({"type":"object","properties":{"name":{"type":"string"}},"required":["name"]})",
+         [&world](const std::string& args) { return remove_entity_handler(world, args); }});
 
-    server.register_tool({
-        "raycast",
-        "Cast a ray and return hit information",
-        R"({"type":"object","properties":{"origin":{"type":"object"},"direction":{"type":"object"},"max_distance":{"type":"number"}}})",
-        [&physics](const std::string& args) { return raycast_handler(physics, args); }
-    });
+    server.register_tool(
+        {"raycast",
+         "Cast a ray and return hit information",
+         R"({"type":"object","properties":{"origin":{"type":"object"},"direction":{"type":"object"},"max_distance":{"type":"number"}}})",
+         [&physics](const std::string& args) { return raycast_handler(physics, args); }});
 }
 
 } // namespace gg
