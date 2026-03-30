@@ -141,6 +141,48 @@ TEST(ScriptTypesTest, BodyDefSphereFromJson) {
 }
 
 // ---------------------------------------------------------------------------
+// Malformed input safety
+// ---------------------------------------------------------------------------
+
+TEST(ScriptTypesTest, Vec3FromJsonNonObjectReturnsDefault) {
+    auto v = gg::script_types::vec3_from_json(nlohmann::json(42));
+    EXPECT_FLOAT_EQ(v.x, 0.0f);
+    EXPECT_FLOAT_EQ(v.y, 0.0f);
+    EXPECT_FLOAT_EQ(v.z, 0.0f);
+}
+
+// ---------------------------------------------------------------------------
+// BodyDef capsule round-trip
+// ---------------------------------------------------------------------------
+
+TEST(ScriptTypesTest, BodyDefCapsuleRoundTrip) {
+    BodyDef def;
+    def.shape = CapsuleShapeDesc{1.0f, 0.5f};
+    def.motion_type = MotionType::Kinematic;
+
+    auto j = to_json(def);
+    EXPECT_EQ(j["shape"].get<std::string>(), "capsule");
+    EXPECT_EQ(j["motionType"].get<std::string>(), "kinematic");
+
+    auto restored = bodydef_from_json(j);
+    ASSERT_TRUE(std::holds_alternative<CapsuleShapeDesc>(restored.shape));
+    EXPECT_FLOAT_EQ(std::get<CapsuleShapeDesc>(restored.shape).half_height, 1.0f);
+    EXPECT_FLOAT_EQ(std::get<CapsuleShapeDesc>(restored.shape).radius, 0.5f);
+    EXPECT_EQ(restored.motion_type, MotionType::Kinematic);
+}
+
+// ---------------------------------------------------------------------------
+// BodyDef box with no halfExtents falls back to defaults
+// ---------------------------------------------------------------------------
+
+TEST(ScriptTypesTest, BodyDefDefaultBoxNoHalfExtents) {
+    nlohmann::json j = {{"shape", "box"}, {"motionType", "dynamic"}};
+    auto def = bodydef_from_json(j);
+    ASSERT_TRUE(std::holds_alternative<BoxShapeDesc>(def.shape));
+    EXPECT_FLOAT_EQ(std::get<BoxShapeDesc>(def.shape).half_x, 0.5f);
+}
+
+// ---------------------------------------------------------------------------
 // ContactEvent test (output-only)
 // ---------------------------------------------------------------------------
 

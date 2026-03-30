@@ -15,6 +15,7 @@ inline nlohmann::json to_json(const Vec3& v) {
 }
 
 inline Vec3 vec3_from_json(const nlohmann::json& j) {
+    if (!j.is_object()) { return {}; }
     return {
         j.value("x", 0.0f),
         j.value("y", 0.0f),
@@ -29,6 +30,7 @@ inline nlohmann::json to_json(const Quat& q) {
 }
 
 inline Quat quat_from_json(const nlohmann::json& j) {
+    if (!j.is_object()) { return {}; }
     return {
         j.value("x", 0.0f),
         j.value("y", 0.0f),
@@ -48,6 +50,7 @@ inline nlohmann::json to_json(const Transform& t) {
 }
 
 inline Transform transform_from_json(const nlohmann::json& j) {
+    if (!j.is_object()) { return {}; }
     const auto pos_j = j.value("position", nlohmann::json::object());
     const auto rot_j = j.value("rotation", nlohmann::json::object());
     const auto scl_j = j.value("scale",    nlohmann::json::object());
@@ -66,8 +69,8 @@ inline std::string motion_type_to_string(MotionType mt) {
     case MotionType::Static:    return "static";
     case MotionType::Dynamic:   return "dynamic";
     case MotionType::Kinematic: return "kinematic";
+    default:                    return "dynamic";
     }
-    return "dynamic";
 }
 
 inline MotionType motion_type_from_string(const std::string& s) {
@@ -109,6 +112,8 @@ inline nlohmann::json to_json(const BodyDef& bd) {
 }
 
 inline BodyDef bodydef_from_json(const nlohmann::json& j) {
+    if (!j.is_object()) { return {}; }
+
     BodyDef bd{};
 
     bd.motion_type = motion_type_from_string(j.value("motionType", "dynamic"));
@@ -127,7 +132,9 @@ inline BodyDef bodydef_from_json(const nlohmann::json& j) {
         };
     } else {
         // Default: box
-        const auto he = j.value("halfExtents", nlohmann::json::object());
+        const auto he = (j.contains("halfExtents") && j["halfExtents"].is_object())
+                            ? j["halfExtents"]
+                            : nlohmann::json::object();
         bd.shape = BoxShapeDesc{
             he.value("x", 0.5f),
             he.value("y", 0.5f),
@@ -145,8 +152,8 @@ inline std::string contact_type_to_string(ContactType ct) {
     case ContactType::Begin:   return "begin";
     case ContactType::Persist: return "persist";
     case ContactType::End:     return "end";
+    default:                   return "begin";
     }
-    return "begin";
 }
 
 // ---- ContactEvent (output-only) ------------------------------------------
