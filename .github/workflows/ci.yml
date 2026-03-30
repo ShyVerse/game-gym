@@ -66,8 +66,11 @@ jobs:
       - name: Run clang-tidy
         run: |
           CLANG_TIDY="$(brew --prefix llvm)/bin/clang-tidy"
+          SDK_PATH="$(xcrun --show-sdk-path)"
           find engine/ -name '*.cpp' \
-            | xargs "$CLANG_TIDY" -p builddir --warnings-as-errors='' 2>&1 \
+            | xargs "$CLANG_TIDY" -p builddir \
+              --extra-arg="-isysroot${SDK_PATH}" \
+              --warnings-as-errors='' 2>&1 \
             | tee clang-tidy-output.txt
           if grep -q 'error:' clang-tidy-output.txt; then
             echo "clang-tidy found issues"

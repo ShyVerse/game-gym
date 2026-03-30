@@ -8,7 +8,10 @@ Checks: >
   readability-misleading-indentation,
   -modernize-use-trailing-return-type,
   -modernize-avoid-c-arrays,
+  -modernize-use-designated-initializers,
+  -modernize-use-nodiscard,
   -bugprone-easily-swappable-parameters,
+  -bugprone-invalid-enum-default-initialization,
 
 WarningsAsErrors: ''
 
