@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="12.8.374"
+# V8 monolith build from just-js/v8 — prebuilt static archive with headers.
+VERSION="14.3"
 DEST="v8"
 
 if [ -f "$DEST/lib/libv8_monolith.a" ] && [ -f "$DEST/include/v8.h" ]; then
@@ -11,9 +12,8 @@ fi
 
 # Detect OS
 case "$(uname -s)" in
-    Darwin)  OS="macos" ;;
+    Darwin)  OS="mac" ;;
     Linux)   OS="linux" ;;
-    MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
     *) echo "Unsupported OS: $(uname -s)"; exit 1 ;;
 esac
 
@@ -24,25 +24,34 @@ case "$(uname -m)" in
     *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
 esac
 
-ASSET="v8-${OS}-${ARCH}-release.tar.gz"
-URL="https://github.com/aspect-build/aspect-v8/releases/download/v${VERSION}/${ASSET}"
+BASE_URL="https://github.com/just-js/v8/releases/download/${VERSION}"
+LIB_ASSET="libv8_monolith-${OS}-${ARCH}.a.gz"
+HEADERS_ASSET="include.tar.gz"
 
 echo "Downloading V8 ${VERSION} (${OS}-${ARCH}) ..."
-TMPDIR="$(mktemp -d)"
-trap 'rm -rf "$TMPDIR"' EXIT
+WORK_DIR="$(mktemp -d)"
+trap 'rm -rf "$WORK_DIR"' EXIT
 
-curl -fSL --retry 3 -o "${TMPDIR}/${ASSET}" "$URL"
+curl -fSL --retry 3 -o "${WORK_DIR}/${LIB_ASSET}" "${BASE_URL}/${LIB_ASSET}"
+curl -fSL --retry 3 -o "${WORK_DIR}/${HEADERS_ASSET}" "${BASE_URL}/${HEADERS_ASSET}"
 
 echo "Extracting to ${DEST}/ ..."
 rm -rf "$DEST"
-mkdir -p "$DEST"
-tar xzf "${TMPDIR}/${ASSET}" -C "$DEST"
+mkdir -p "$DEST/lib"
+
+# Library: decompress gzipped static archive
+gunzip -c "${WORK_DIR}/${LIB_ASSET}" > "$DEST/lib/libv8_monolith.a"
+
+# Headers: extract include/ directory
+tar xzf "${WORK_DIR}/${HEADERS_ASSET}" -C "$DEST"
 
 # Validate expected structure
 if [ ! -f "$DEST/lib/libv8_monolith.a" ]; then
     echo "ERROR: libv8_monolith.a not found after extraction"
-    echo "  Expected: $DEST/lib/libv8_monolith.a"
-    ls -la "$DEST/lib/" 2>/dev/null || echo "  $DEST/lib/ does not exist"
+    exit 1
+fi
+if [ ! -f "$DEST/include/v8.h" ]; then
+    echo "ERROR: v8.h not found after extraction"
     exit 1
 fi
 
