@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: brew install meson ninja llvm
+        run: brew install meson ninja llvm@18
 
       - name: Setup wgpu-native
         run: bash scripts/setup-wgpu.sh
@@ -65,7 +65,7 @@ jobs:
 
       - name: Run clang-tidy
         run: |
-          CLANG_TIDY="$(brew --prefix llvm)/bin/clang-tidy"
+          CLANG_TIDY="$(brew --prefix llvm@18)/bin/clang-tidy"
           SDK_PATH="$(xcrun --show-sdk-path)"
           find engine/ -name '*.cpp' \
             | xargs "$CLANG_TIDY" -p builddir \
