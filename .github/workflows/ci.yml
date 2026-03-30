@@ -69,10 +69,4 @@ jobs:
           SDK_PATH="$(xcrun --show-sdk-path)"
           find engine/ -name '*.cpp' \
             | xargs "$CLANG_TIDY" -p builddir \
-              --extra-arg="-isysroot${SDK_PATH}" \
-              --warnings-as-errors='' 2>&1 \
-            | tee clang-tidy-output.txt
-          if grep -q 'error:' clang-tidy-output.txt; then
-            echo "clang-tidy found issues"
-            exit 1
-          fi
+              --extra-arg="-isysroot${SDK_PATH}"

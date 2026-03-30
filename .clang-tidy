@@ -13,7 +13,7 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -bugprone-invalid-enum-default-initialization,
 
-WarningsAsErrors: ''
+WarningsAsErrors: '*'
 
 HeaderFilterRegex: 'engine/.*'
 
