@@ -78,22 +78,22 @@ type ComponentType =
 // ---- Global objects ---------------------------------------------------------
 
 declare const world: {
-    createEntity(name: string): { created: string } | { error: string };
-    destroyEntity(name: string): { destroyed: string } | { error: string };
+    createEntity(name: string): { name: string; transform: TransformData } | { error: string };
+    destroyEntity(name: string): { ok: true } | { error: string };
     getEntity(name: string): EntityInfo | null;
     listEntities(): string[];
     setTransform(
         name: string,
         transform: TransformData,
-    ): { updated: string } | { error: string };
+    ): { ok: true } | { error: string };
     hasComponent(name: string, component: ComponentType): boolean;
 };
 
 declare const physics: {
     addBody(position: Vec3, rotation: Quat, bodyDef: BodyDef): number;
-    removeBody(bodyId: number): boolean;
+    removeBody(bodyId: number): { ok: true } | { error: string };
     getPosition(bodyId: number): Vec3 | null;
-    setPosition(bodyId: number, position: Vec3): boolean;
+    setPosition(bodyId: number, position: Vec3): { ok: true } | { error: string };
     raycast(
         origin: Vec3,
         direction: Vec3,

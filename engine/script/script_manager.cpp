@@ -1,4 +1,5 @@
 #include "script/script_manager.h"
+
 #include "script/file_watcher.h"
 #include "script/script_engine.h"
 
@@ -25,8 +26,7 @@ struct ScriptManager::Impl {
     std::unique_ptr<FileWatcher> watcher;
     std::set<std::string> loaded_scripts;
 
-    Impl(ScriptEngine& e, std::string dir)
-        : engine(e), script_dir(std::move(dir)) {}
+    Impl(ScriptEngine& e, std::string dir) : engine(e), script_dir(std::move(dir)) {}
 
     static std::string read_file(const std::string& path) {
         std::ifstream file(path);
@@ -92,26 +92,30 @@ struct ScriptManager::Impl {
     // so the next script's definitions don't collide.
     void capture_lifecycle(const std::string& path) {
         const std::string key = js_escape(path);
-        const std::string js =
-            "globalThis.__gg_scripts = globalThis.__gg_scripts || {};\n"
-            "globalThis.__gg_scripts[\"" + key + "\"] = {\n"
-            "  onInit: typeof onInit === 'function' ? onInit : null,\n"
-            "  onUpdate: typeof onUpdate === 'function' ? onUpdate : null,\n"
-            "  onDestroy: typeof onDestroy === 'function' ? onDestroy : null,\n"
-            "};\n"
-            "if (typeof onInit === 'function') onInit = undefined;\n"
-            "if (typeof onUpdate === 'function') onUpdate = undefined;\n"
-            "if (typeof onDestroy === 'function') onDestroy = undefined;\n";
+        const std::string js = "globalThis.__gg_scripts = globalThis.__gg_scripts || {};\n"
+                               "globalThis.__gg_scripts[\"" +
+                               key +
+                               "\"] = {\n"
+                               "  onInit: typeof onInit === 'function' ? onInit : null,\n"
+                               "  onUpdate: typeof onUpdate === 'function' ? onUpdate : null,\n"
+                               "  onDestroy: typeof onDestroy === 'function' ? onDestroy : null,\n"
+                               "};\n"
+                               "if (typeof onInit === 'function') onInit = undefined;\n"
+                               "if (typeof onUpdate === 'function') onUpdate = undefined;\n"
+                               "if (typeof onDestroy === 'function') onDestroy = undefined;\n";
         engine.execute(js, "<capture:" + path + ">");
     }
 
     void call_script_lifecycle(const std::string& path, const std::string& fn) {
         const std::string key = js_escape(path);
-        const std::string js =
-            "(function() {\n"
-            "  var s = globalThis.__gg_scripts && globalThis.__gg_scripts[\"" + key + "\"];\n"
-            "  if (s && typeof s." + fn + " === 'function') { s." + fn + "(); }\n"
-            "})()";
+        const std::string js = "(function() {\n"
+                               "  var s = globalThis.__gg_scripts && globalThis.__gg_scripts[\"" +
+                               key +
+                               "\"];\n"
+                               "  if (s && typeof s." +
+                               fn + " === 'function') { s." + fn +
+                               "(); }\n"
+                               "})()";
         engine.execute(js, "<lifecycle:" + fn + ">");
     }
 
@@ -122,7 +126,9 @@ struct ScriptManager::Impl {
             "(function() {\n"
             "  var scripts = globalThis.__gg_scripts;\n"
             "  if (!scripts) return;\n"
-            "  var dt = " + std::string(buf) + ";\n"
+            "  var dt = " +
+            std::string(buf) +
+            ";\n"
             "  for (var key in scripts) {\n"
             "    if (scripts[key] && typeof scripts[key].onUpdate === 'function') {\n"
             "      scripts[key].onUpdate(dt);\n"
@@ -134,9 +140,9 @@ struct ScriptManager::Impl {
 
     void remove_script_entry(const std::string& path) {
         const std::string key = js_escape(path);
-        engine.execute(
-            "if (globalThis.__gg_scripts) delete globalThis.__gg_scripts[\"" + key + "\"];",
-            "<remove:" + path + ">");
+        engine.execute("if (globalThis.__gg_scripts) delete globalThis.__gg_scripts[\"" + key +
+                           "\"];",
+                       "<remove:" + path + ">");
     }
 };
 
@@ -149,10 +155,9 @@ ScriptManager::ScriptManager(ScriptEngine& engine, std::string script_dir)
 
 ScriptManager::~ScriptManager() = default;
 
-std::unique_ptr<ScriptManager> ScriptManager::create(
-        ScriptEngine& engine, const std::string& script_dir) {
-    auto mgr = std::unique_ptr<ScriptManager>(
-        new ScriptManager(engine, script_dir));
+std::unique_ptr<ScriptManager> ScriptManager::create(ScriptEngine& engine,
+                                                     const std::string& script_dir) {
+    auto mgr = std::unique_ptr<ScriptManager>(new ScriptManager(engine, script_dir));
     mgr->impl_->watcher = FileWatcher::create(script_dir);
     return mgr;
 }

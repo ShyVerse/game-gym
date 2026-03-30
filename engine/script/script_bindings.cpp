@@ -9,7 +9,6 @@
 
 #include <flecs.h>
 #include <nlohmann/json.hpp>
-
 #include <string>
 
 namespace gg {
@@ -25,8 +24,7 @@ namespace st = script_types;
 
 /// Find an entity by its Name component value.  Returns an invalid entity if
 /// no match is found.
-flecs::entity find_entity_by_name(flecs::world& raw,
-                                  const std::string& name) {
+flecs::entity find_entity_by_name(flecs::world& raw, const std::string& name) {
     flecs::entity found;
     raw.each([&](flecs::entity e, const Name& n) {
         if (n.value == name) {
@@ -131,9 +129,7 @@ std::string ecs_get_entity(World& world, const std::string& args_json) {
 std::string ecs_list_entities(World& world, const std::string& /*args_json*/) {
     try {
         json names = json::array();
-        world.raw().each([&](flecs::entity, const Name& n) {
-            names.push_back(n.value);
-        });
+        world.raw().each([&](flecs::entity, const Name& n) { names.push_back(n.value); });
         return names.dump();
     } catch (const std::exception& e) {
         return make_error(std::string("listEntities failed: ") + e.what());
@@ -216,8 +212,7 @@ std::string ecs_has_component(World& world, const std::string& args_json) {
 // ---------------------------------------------------------------------------
 
 /// __physics_addBody(position, rotation, bodyDef) -> bodyId
-std::string physics_add_body(PhysicsWorld& physics,
-                             const std::string& args_json) {
+std::string physics_add_body(PhysicsWorld& physics, const std::string& args_json) {
     try {
         const auto args = json::parse(args_json);
         if (!args.is_array() || args.size() < 3) {
@@ -236,8 +231,7 @@ std::string physics_add_body(PhysicsWorld& physics,
 }
 
 /// __physics_removeBody(bodyId) -> {ok:true} or error
-std::string physics_remove_body(PhysicsWorld& physics,
-                                const std::string& args_json) {
+std::string physics_remove_body(PhysicsWorld& physics, const std::string& args_json) {
     try {
         const auto args = json::parse(args_json);
         if (!args.is_array() || args.empty()) {
@@ -253,8 +247,7 @@ std::string physics_remove_body(PhysicsWorld& physics,
 }
 
 /// __physics_getPosition(bodyId) -> Vec3
-std::string physics_get_position(PhysicsWorld& physics,
-                                 const std::string& args_json) {
+std::string physics_get_position(PhysicsWorld& physics, const std::string& args_json) {
     try {
         const auto args = json::parse(args_json);
         if (!args.is_array() || args.empty()) {
@@ -270,8 +263,7 @@ std::string physics_get_position(PhysicsWorld& physics,
 }
 
 /// __physics_setPosition(bodyId, position) -> {ok:true} or error
-std::string physics_set_position(PhysicsWorld& physics,
-                                 const std::string& args_json) {
+std::string physics_set_position(PhysicsWorld& physics, const std::string& args_json) {
     try {
         const auto args = json::parse(args_json);
         if (!args.is_array() || args.size() < 2) {
@@ -288,8 +280,7 @@ std::string physics_set_position(PhysicsWorld& physics,
 }
 
 /// __physics_raycast(origin, direction, maxDistance) -> RayHit or null
-std::string physics_raycast(PhysicsWorld& physics,
-                            const std::string& args_json) {
+std::string physics_raycast(PhysicsWorld& physics, const std::string& args_json) {
     try {
         const auto args = json::parse(args_json);
         if (!args.is_array() || args.size() < 3) {
@@ -314,8 +305,7 @@ std::string physics_raycast(PhysicsWorld& physics,
 }
 
 /// __physics_contactEvents() -> array of ContactEvent
-std::string physics_contact_events(PhysicsWorld& physics,
-                                   const std::string& /*args_json*/) {
+std::string physics_contact_events(PhysicsWorld& physics, const std::string& /*args_json*/) {
     try {
         json events = json::array();
         for (const auto& ce : physics.contact_events()) {
@@ -356,72 +346,58 @@ const physics = {
 // Public API
 // ---------------------------------------------------------------------------
 
-void register_script_bindings(ScriptEngine& engine,
-                              World& world,
-                              PhysicsWorld& physics) {
+void register_script_bindings(ScriptEngine& engine, World& world, PhysicsWorld& physics) {
     // -- ECS bindings ---------------------------------------------------------
 
-    engine.register_function("__ecs_createEntity",
-        [&world](const std::string& args) {
-            return ecs_create_entity(world, args);
-        });
+    engine.register_function("__ecs_createEntity", [&world](const std::string& args) {
+        return ecs_create_entity(world, args);
+    });
 
-    engine.register_function("__ecs_destroyEntity",
-        [&world](const std::string& args) {
-            return ecs_destroy_entity(world, args);
-        });
+    engine.register_function("__ecs_destroyEntity", [&world](const std::string& args) {
+        return ecs_destroy_entity(world, args);
+    });
 
-    engine.register_function("__ecs_getEntity",
-        [&world](const std::string& args) {
-            return ecs_get_entity(world, args);
-        });
+    engine.register_function("__ecs_getEntity", [&world](const std::string& args) {
+        return ecs_get_entity(world, args);
+    });
 
-    engine.register_function("__ecs_listEntities",
-        [&world](const std::string& args) {
-            return ecs_list_entities(world, args);
-        });
+    engine.register_function("__ecs_listEntities", [&world](const std::string& args) {
+        return ecs_list_entities(world, args);
+    });
 
-    engine.register_function("__ecs_setTransform",
-        [&world](const std::string& args) {
-            return ecs_set_transform(world, args);
-        });
+    engine.register_function("__ecs_setTransform", [&world](const std::string& args) {
+        return ecs_set_transform(world, args);
+    });
 
-    engine.register_function("__ecs_hasComponent",
-        [&world](const std::string& args) {
-            return ecs_has_component(world, args);
-        });
+    engine.register_function("__ecs_hasComponent", [&world](const std::string& args) {
+        return ecs_has_component(world, args);
+    });
 
     // -- Physics bindings -----------------------------------------------------
 
-    engine.register_function("__physics_addBody",
-        [&physics](const std::string& args) {
-            return physics_add_body(physics, args);
-        });
+    engine.register_function("__physics_addBody", [&physics](const std::string& args) {
+        return physics_add_body(physics, args);
+    });
 
-    engine.register_function("__physics_removeBody",
-        [&physics](const std::string& args) {
-            return physics_remove_body(physics, args);
-        });
+    engine.register_function("__physics_removeBody", [&physics](const std::string& args) {
+        return physics_remove_body(physics, args);
+    });
 
-    engine.register_function("__physics_getPosition",
-        [&physics](const std::string& args) {
-            return physics_get_position(physics, args);
-        });
+    engine.register_function("__physics_getPosition", [&physics](const std::string& args) {
+        return physics_get_position(physics, args);
+    });
 
-    engine.register_function("__physics_setPosition",
-        [&physics](const std::string& args) {
-            return physics_set_position(physics, args);
-        });
+    engine.register_function("__physics_setPosition", [&physics](const std::string& args) {
+        return physics_set_position(physics, args);
+    });
 
-    engine.register_function("__physics_raycast",
-        [&physics](const std::string& args) {
-            return physics_raycast(physics, args);
-        });
+    engine.register_function("__physics_raycast", [&physics](const std::string& args) {
+        return physics_raycast(physics, args);
+    });
 
-    engine.register_function("__physics_contactEvents",
-        [&physics](const std::string& args) {
-            return physics_contact_events(physics, args);
-        });
+    engine.register_function("__physics_contactEvents", [&physics](const std::string& args) {
+        return physics_contact_events(physics, args);
+    });
 
     // -- Inject JS wrapper objects --------------------------------------------
 

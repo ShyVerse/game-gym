@@ -16,7 +16,7 @@ TEST(ScriptEngineTest, ShutdownIsIdempotent) {
     auto engine = gg::ScriptEngine::create();
     engine->shutdown();
     EXPECT_FALSE(engine->is_alive());
-    engine->shutdown();  // second call must not crash
+    engine->shutdown(); // second call must not crash
     EXPECT_FALSE(engine->is_alive());
 }
 
@@ -87,14 +87,13 @@ TEST(ScriptEngineTest, CallFunctionWithNoArgs) {
 
 TEST(ScriptEngineTest, RegisterAndCallNativeFunction) {
     auto engine = gg::ScriptEngine::create();
-    engine->register_function("nativeAdd",
-        [](const std::string& args_json) -> std::string {
-            // Simple test: parse "[a, b]" and return sum.
-            // For testing we just parse two integers from the JSON array.
-            int a = 0, b = 0;
-            std::sscanf(args_json.c_str(), "[%d,%d]", &a, &b);
-            return std::to_string(a + b);
-        });
+    engine->register_function("nativeAdd", [](const std::string& args_json) -> std::string {
+        // Simple test: parse "[a, b]" and return sum.
+        // For testing we just parse two integers from the JSON array.
+        int a = 0, b = 0;
+        std::sscanf(args_json.c_str(), "[%d,%d]", &a, &b);
+        return std::to_string(a + b);
+    });
     auto result = engine->execute("nativeAdd(10, 20)");
     EXPECT_TRUE(result.ok);
     EXPECT_EQ(result.value, "30");
@@ -102,10 +101,9 @@ TEST(ScriptEngineTest, RegisterAndCallNativeFunction) {
 
 TEST(ScriptEngineTest, NativeFunctionErrorDoesNotCrashEngine) {
     auto engine = gg::ScriptEngine::create();
-    engine->register_function("throwingNative",
-        [](const std::string&) -> std::string {
-            throw std::runtime_error("native error");
-        });
+    engine->register_function("throwingNative", [](const std::string&) -> std::string {
+        throw std::runtime_error("native error");
+    });
     auto result = engine->execute("throwingNative()");
     EXPECT_FALSE(result.ok);
     EXPECT_FALSE(result.error.empty());

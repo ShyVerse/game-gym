@@ -10,7 +10,7 @@ class ScriptEngine;
 class ScriptManager {
 public:
     static std::unique_ptr<ScriptManager> create(ScriptEngine& engine,
-                                                  const std::string& script_dir);
+                                                 const std::string& script_dir);
     ~ScriptManager();
 
     ScriptManager(const ScriptManager&) = delete;

@@ -2,19 +2,17 @@
 
 #ifdef __linux__
 
-#include <sys/inotify.h>
-#include <unistd.h>
-
 #include <filesystem>
 #include <map>
+#include <sys/inotify.h>
+#include <unistd.h>
 #include <vector>
 
 namespace gg {
 
 class FileWatcherLinux final : public FileWatcher {
 public:
-    explicit FileWatcherLinux(std::string directory)
-        : directory_(std::move(directory)) {
+    explicit FileWatcherLinux(std::string directory) : directory_(std::move(directory)) {
         fd_ = inotify_init1(IN_NONBLOCK);
         if (fd_ < 0) {
             return;
@@ -61,15 +59,12 @@ public:
         return result;
     }
 
-    const std::string& directory() const override {
-        return directory_;
-    }
+    const std::string& directory() const override { return directory_; }
 
 private:
     void add_watch_recursive(const std::string& path) {
         namespace fs = std::filesystem;
-        int wd = inotify_add_watch(fd_, path.c_str(),
-            IN_MODIFY | IN_CREATE | IN_MOVED_TO);
+        int wd = inotify_add_watch(fd_, path.c_str(), IN_MODIFY | IN_CREATE | IN_MOVED_TO);
         if (wd >= 0) {
             wd_to_path_[wd] = path;
         }

@@ -11,10 +11,7 @@ namespace gg {
 
 class FileWatcherMacOS final : public FileWatcher {
 public:
-    explicit FileWatcherMacOS(std::string directory)
-        : directory_(std::move(directory)) {
-        start();
-    }
+    explicit FileWatcherMacOS(std::string directory) : directory_(std::move(directory)) { start(); }
 
     ~FileWatcherMacOS() override { stop(); }
 
@@ -33,19 +30,22 @@ private:
     void start() {
         CFStringRef path_ref = CFStringCreateWithCString(
             kCFAllocatorDefault, directory_.c_str(), kCFStringEncodingUTF8);
-        CFArrayRef paths = CFArrayCreate(
-            kCFAllocatorDefault,
-            reinterpret_cast<const void**>(&path_ref), 1,
-            &kCFTypeArrayCallBacks);
+        CFArrayRef paths = CFArrayCreate(kCFAllocatorDefault,
+                                         reinterpret_cast<const void**>(&path_ref),
+                                         1,
+                                         &kCFTypeArrayCallBacks);
 
         FSEventStreamContext ctx{};
         ctx.info = this;
 
-        stream_ = FSEventStreamCreate(
-            kCFAllocatorDefault, &FileWatcherMacOS::callback, &ctx, paths,
-            kFSEventStreamEventIdSinceNow, 0.1,
-            kFSEventStreamCreateFlagFileEvents |
-                kFSEventStreamCreateFlagNoDefer);
+        stream_ = FSEventStreamCreate(kCFAllocatorDefault,
+                                      &FileWatcherMacOS::callback,
+                                      &ctx,
+                                      paths,
+                                      kFSEventStreamEventIdSinceNow,
+                                      0.1,
+                                      kFSEventStreamCreateFlagFileEvents |
+                                          kFSEventStreamCreateFlagNoDefer);
 
         if (!stream_) {
             CFRelease(paths);
@@ -78,10 +78,11 @@ private:
     }
 
     static void callback(ConstFSEventStreamRef /*stream_ref*/,
-                          void* client_info, size_t num_events,
-                          void* event_paths,
-                          const FSEventStreamEventFlags* /*flags*/,
-                          const FSEventStreamEventId* /*ids*/) {
+                         void* client_info,
+                         size_t num_events,
+                         void* event_paths,
+                         const FSEventStreamEventFlags* /*flags*/,
+                         const FSEventStreamEventId* /*ids*/) {
         auto* self = static_cast<FileWatcherMacOS*>(client_info);
         auto** paths = static_cast<char**>(event_paths);
 
@@ -98,8 +99,7 @@ private:
     std::set<std::string> changed_;
 };
 
-std::unique_ptr<FileWatcher> FileWatcher::create(
-        const std::string& directory) {
+std::unique_ptr<FileWatcher> FileWatcher::create(const std::string& directory) {
     return std::make_unique<FileWatcherMacOS>(directory);
 }
 

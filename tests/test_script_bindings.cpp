@@ -81,8 +81,7 @@ TEST_F(ScriptBindingsTest, ListEntitiesFromJS) {
 // ---------------------------------------------------------------------------
 
 TEST_F(ScriptBindingsTest, GetEntityReturnsNullForMissing) {
-    auto result = engine_->execute(
-        "JSON.stringify(__ecs_getEntity('nonexistent'))");
+    auto result = engine_->execute("JSON.stringify(__ecs_getEntity('nonexistent'))");
     ASSERT_TRUE(result.ok) << result.error;
     EXPECT_EQ(result.value, "null");
 }
@@ -121,10 +120,9 @@ TEST_F(ScriptBindingsTest, SetTransformFromJS) {
     entity.set<gg::Name>({"mover"});
     entity.set<gg::Transform>({});
 
-    auto result = engine_->execute(
-        "JSON.stringify(world.setTransform('mover', "
-        "{position:{x:10,y:20,z:30}, rotation:{x:0,y:0,z:0,w:1}, "
-        "scale:{x:2,y:2,z:2}}))");
+    auto result = engine_->execute("JSON.stringify(world.setTransform('mover', "
+                                   "{position:{x:10,y:20,z:30}, rotation:{x:0,y:0,z:0,w:1}, "
+                                   "scale:{x:2,y:2,z:2}}))");
     ASSERT_TRUE(result.ok) << result.error;
 
     const auto* t = entity.get<gg::Transform>();
@@ -147,13 +145,13 @@ TEST_F(ScriptBindingsTest, HasComponentFromJS) {
     entity.set<gg::Transform>({});
     // Intentionally no Velocity component
 
-    auto result_transform = engine_->execute(
-        "JSON.stringify(__ecs_hasComponent('checker', 'Transform'))");
+    auto result_transform =
+        engine_->execute("JSON.stringify(__ecs_hasComponent('checker', 'Transform'))");
     ASSERT_TRUE(result_transform.ok) << result_transform.error;
     EXPECT_EQ(result_transform.value, "true");
 
-    auto result_velocity = engine_->execute(
-        "JSON.stringify(__ecs_hasComponent('checker', 'Velocity'))");
+    auto result_velocity =
+        engine_->execute("JSON.stringify(__ecs_hasComponent('checker', 'Velocity'))");
     ASSERT_TRUE(result_velocity.ok) << result_velocity.error;
     EXPECT_EQ(result_velocity.value, "false");
 }
@@ -163,11 +161,10 @@ TEST_F(ScriptBindingsTest, HasComponentFromJS) {
 // ---------------------------------------------------------------------------
 
 TEST_F(ScriptBindingsTest, AddAndQueryPhysicsBody) {
-    auto result = engine_->execute(
-        "JSON.stringify(__physics_addBody("
-        "{x:0,y:5,z:0}, "
-        "{x:0,y:0,z:0,w:1}, "
-        "{shape:'box', motionType:'dynamic'}))");
+    auto result = engine_->execute("JSON.stringify(__physics_addBody("
+                                   "{x:0,y:5,z:0}, "
+                                   "{x:0,y:0,z:0,w:1}, "
+                                   "{shape:'box', motionType:'dynamic'}))");
     ASSERT_TRUE(result.ok) << result.error;
 
     auto body_id = json::parse(result.value);
@@ -190,9 +187,8 @@ TEST_F(ScriptBindingsTest, RaycastFromJS) {
     // Step to let broadphase settle
     physics_->step(0.0f);
 
-    auto result = engine_->execute(
-        "JSON.stringify(__physics_raycast("
-        "{x:0,y:0,z:-20}, {x:0,y:0,z:1}, 100))");
+    auto result = engine_->execute("JSON.stringify(__physics_raycast("
+                                   "{x:0,y:0,z:-20}, {x:0,y:0,z:1}, 100))");
     ASSERT_TRUE(result.ok) << result.error;
 
     auto hit_json = json::parse(result.value);

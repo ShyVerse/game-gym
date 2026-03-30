@@ -1,7 +1,6 @@
-#include "script/script_types.h"
-
 #include "ecs/components.h"
 #include "physics/physics_components.h"
+#include "script/script_types.h"
 
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
@@ -82,7 +81,7 @@ TEST(ScriptTypesTest, TransformRoundTrip) {
     const Transform original{
         .position = {1.0f, 2.0f, 3.0f},
         .rotation = {0.0f, 0.707f, 0.0f, 0.707f},
-        .scale    = {2.0f, 2.0f, 2.0f},
+        .scale = {2.0f, 2.0f, 2.0f},
     };
     const auto restored = transform_from_json(to_json(original));
 

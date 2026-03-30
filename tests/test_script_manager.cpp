@@ -62,8 +62,7 @@ TEST_F(ScriptManagerTest, CreatesSuccessfully) {
 }
 
 TEST_F(ScriptManagerTest, LoadAllFindsJsFiles) {
-    write_js("hello.js",
-             "function onInit() { globalThis.__hello = 'world'; }\n");
+    write_js("hello.js", "function onInit() { globalThis.__hello = 'world'; }\n");
 
     manager_ = gg::ScriptManager::create(*engine_, tmp_dir_.string());
     manager_->load_all();
@@ -77,8 +76,7 @@ TEST_F(ScriptManagerTest, LoadAllFindsJsFiles) {
 }
 
 TEST_F(ScriptManagerTest, LoadAllCallsOnInit) {
-    write_js("init_test.js",
-             "function onInit() { globalThis.__initCalled = true; }\n");
+    write_js("init_test.js", "function onInit() { globalThis.__initCalled = true; }\n");
 
     manager_ = gg::ScriptManager::create(*engine_, tmp_dir_.string());
     manager_->load_all();

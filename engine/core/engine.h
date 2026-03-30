@@ -25,10 +25,8 @@ struct EngineConfig {
     bool resizable = true;
     std::string shader_path = "shaders/triangle.wgsl";
     bool enable_mcp = false;
-#ifdef GG_ENABLE_SCRIPTS
     bool enable_scripts = false;
     std::string script_dir = "assets/scripts";
-#endif
 };
 
 class Engine {

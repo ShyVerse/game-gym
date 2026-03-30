@@ -22,11 +22,9 @@ public:
     ScriptEngine(ScriptEngine&&) = delete;
     ScriptEngine& operator=(ScriptEngine&&) = delete;
 
-    ScriptResult execute(const std::string& source,
-                         const std::string& filename = "<eval>");
+    ScriptResult execute(const std::string& source, const std::string& filename = "<eval>");
     ScriptResult execute_module(const std::string& path);
-    ScriptResult call_function(const std::string& name,
-                               const std::string& args_json = "[]");
+    ScriptResult call_function(const std::string& name, const std::string& args_json = "[]");
 
     using NativeCallback = std::function<std::string(const std::string& args_json)>;
     void register_function(const std::string& name, NativeCallback callback);
