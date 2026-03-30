@@ -9,8 +9,9 @@ namespace {
 bool glfw_initialized = false;
 
 bool ensure_glfw() {
-    if (glfw_initialized)
+    if (glfw_initialized) {
         return true;
+    }
     if (glfwInit() == GLFW_FALSE) {
         std::fprintf(stderr, "[game-gym] Failed to initialize GLFW\n");
         return false;
@@ -62,8 +63,9 @@ Window::Window(Window&& other) noexcept
 
 Window& Window::operator=(Window&& other) noexcept {
     if (this != &other) {
-        if (handle_)
+        if (handle_) {
             glfwDestroyWindow(handle_);
+        }
         handle_ = other.handle_;
         width_ = other.width_;
         height_ = other.height_;

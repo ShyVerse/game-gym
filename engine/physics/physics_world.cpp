@@ -220,11 +220,13 @@ void PhysicsWorld::step_with_ecs(float dt, flecs::world& ecs) {
     // Post-step: sync Jolt -> ECS for dynamic/kinematic bodies
     auto& bi = impl_->system->GetBodyInterface();
     ecs.each([&bi](flecs::entity, Transform& t, const RigidBody& rb) {
-        if (rb.body_id == UINT32_MAX)
+        if (rb.body_id == UINT32_MAX) {
             return;
+        }
         BodyID jolt_id(rb.body_id);
-        if (bi.GetMotionType(jolt_id) == EMotionType::Static)
+        if (bi.GetMotionType(jolt_id) == EMotionType::Static) {
             return;
+        }
 
         RVec3 pos = bi.GetPosition(jolt_id);
         JPH::Quat rot = bi.GetRotation(jolt_id);
@@ -259,8 +261,9 @@ PhysicsWorld::add_body(const Vec3& position, const gg::Quat& rotation, const Bod
 
     auto& bi = impl_->system->GetBodyInterface();
     Body* body = bi.CreateBody(settings);
-    if (!body)
+    if (!body) {
         return UINT32_MAX;
+    }
 
     const EActivation activation =
         (def.motion_type == MotionType::Static) ? EActivation::DontActivate : EActivation::Activate;
@@ -270,8 +273,9 @@ PhysicsWorld::add_body(const Vec3& position, const gg::Quat& rotation, const Bod
 }
 
 void PhysicsWorld::remove_body(uint32_t body_id) {
-    if (body_id == UINT32_MAX)
+    if (body_id == UINT32_MAX) {
         return;
+    }
     auto& bi = impl_->system->GetBodyInterface();
     BodyID jolt_id(body_id);
     bi.RemoveBody(jolt_id);
@@ -279,23 +283,26 @@ void PhysicsWorld::remove_body(uint32_t body_id) {
 }
 
 void PhysicsWorld::set_position(uint32_t body_id, const Vec3& pos) {
-    if (body_id == UINT32_MAX)
+    if (body_id == UINT32_MAX) {
         return;
+    }
     impl_->system->GetBodyInterface().SetPosition(
         BodyID(body_id), RVec3(pos.x, pos.y, pos.z), EActivation::Activate);
 }
 
 Vec3 PhysicsWorld::get_position(uint32_t body_id) const {
-    if (body_id == UINT32_MAX)
+    if (body_id == UINT32_MAX) {
         return {};
+    }
     RVec3 p = impl_->system->GetBodyInterface().GetPosition(BodyID(body_id));
     return {
         static_cast<float>(p.GetX()), static_cast<float>(p.GetY()), static_cast<float>(p.GetZ())};
 }
 
 gg::Quat PhysicsWorld::get_rotation(uint32_t body_id) const {
-    if (body_id == UINT32_MAX)
+    if (body_id == UINT32_MAX) {
         return {};
+    }
     JPH::Quat q = impl_->system->GetBodyInterface().GetRotation(BodyID(body_id));
     return {q.GetX(), q.GetY(), q.GetZ(), q.GetW()};
 }
