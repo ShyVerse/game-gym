@@ -49,4 +49,12 @@ if get_option('enable_tests')
     dependencies: [engine_dep, gtest_dep, gtest_main_dep],
   )
   test('mcp', test_mcp)
+
+  if enable_scripts
+    test_script_engine = executable('test_script_engine',
+      'test_script_engine.cpp',
+      dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+    )
+    test('script_engine', test_script_engine)
+  endif
 endif
