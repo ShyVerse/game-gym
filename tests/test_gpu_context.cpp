@@ -43,6 +43,6 @@ TEST(GpuContextTest, SurfaceDimensionsMatchWindow) {
     auto ctx = gg::GpuContext::create(*window);
     ASSERT_NE(ctx, nullptr);
 
-    EXPECT_EQ(ctx->surface_width(), window->width());
-    EXPECT_EQ(ctx->surface_height(), window->height());
+    EXPECT_EQ(ctx->surface_width(), window->framebuffer_width());
+    EXPECT_EQ(ctx->surface_height(), window->framebuffer_height());
 }

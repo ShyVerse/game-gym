@@ -162,8 +162,8 @@ std::unique_ptr<GpuContext> GpuContext::create(const Window& window) {
     }
 
     // 6. Surface format & configure
-    ctx->surface_width_ = window.width();
-    ctx->surface_height_ = window.height();
+    ctx->surface_width_ = window.framebuffer_width();
+    ctx->surface_height_ = window.framebuffer_height();
 
     WGPUSurfaceCapabilities caps{};
     caps.nextInChain = nullptr;

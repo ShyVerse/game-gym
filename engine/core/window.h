@@ -30,6 +30,8 @@ public:
 
     [[nodiscard]] uint32_t width() const;
     [[nodiscard]] uint32_t height() const;
+    [[nodiscard]] uint32_t framebuffer_width() const;
+    [[nodiscard]] uint32_t framebuffer_height() const;
     [[nodiscard]] GLFWwindow* native_handle() const;
 
 private:
