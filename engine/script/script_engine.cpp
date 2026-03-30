@@ -3,7 +3,6 @@
 #include <v8.h>
 #include <libplatform/libplatform.h>
 
-#include <chrono>
 #include <fstream>
 #include <mutex>
 #include <sstream>
@@ -66,7 +65,8 @@ struct ScriptEngine::Impl {
     bool alive = false;
 
     // Registered native callbacks, keyed by function name.
-    std::unordered_map<std::string, NativeCallback> callbacks;
+    // Stored as unique_ptr so pointers remain stable across rehash.
+    std::unordered_map<std::string, std::unique_ptr<NativeCallback>> callbacks;
 
     // V8 FunctionCallback trampoline: reads the NativeCallback from External
     // data, serialises arguments to JSON, calls the callback, and sets the
@@ -116,6 +116,10 @@ struct ScriptEngine::Impl {
         } catch (const std::exception& e) {
             iso->ThrowException(
                 v8::String::NewFromUtf8(iso, e.what()).ToLocalChecked());
+        } catch (...) {
+            iso->ThrowException(
+                v8::String::NewFromUtf8(iso, "unknown native error")
+                    .ToLocalChecked());
         }
     }
 };
@@ -213,6 +217,9 @@ ScriptResult ScriptEngine::execute_module(const std::string& path) {
 
     std::ostringstream oss;
     oss << "(function() { " << file.rdbuf() << "\n})();";
+    if (file.bad()) {
+        return {false, "", "read error: " + path};
+    }
     return execute(oss.str(), path);
 }
 
@@ -238,17 +245,17 @@ void ScriptEngine::register_function(const std::string& name,
                                      NativeCallback callback) {
     if (!impl_->alive) return;
 
-    // Store the callback so its lifetime is tied to the engine.
-    impl_->callbacks[name] = std::move(callback);
+    // Store the callback on the heap so the pointer remains stable
+    // even when the unordered_map rehashes.
+    auto& cb = impl_->callbacks[name];
+    cb = std::make_unique<NativeCallback>(std::move(callback));
+    NativeCallback* cb_ptr = cb.get();
 
     v8::Isolate::Scope isolate_scope(impl_->isolate);
     v8::HandleScope handle_scope(impl_->isolate);
     v8::Local<v8::Context> ctx =
         impl_->context.Get(impl_->isolate);
     v8::Context::Scope context_scope(ctx);
-
-    // Wrap a pointer to the stored callback as External data.
-    NativeCallback* cb_ptr = &impl_->callbacks[name];
     v8::Local<v8::External> external_data =
         v8::External::New(impl_->isolate, cb_ptr, kCallbackPtrTag);
 
@@ -270,15 +277,11 @@ void ScriptEngine::register_function(const std::string& name,
 // ---------------------------------------------------------------------------
 
 void ScriptEngine::idle_gc(double deadline_seconds) {
-    if (!impl_->alive) return;
+    if (!impl_->alive || deadline_seconds <= 0.0) {
+        return;
+    }
 
     v8::Isolate::Scope isolate_scope(impl_->isolate);
-
-    // Use LowMemoryNotification as a portable GC hint --
-    // IdleNotificationDeadline was removed in recent V8 versions.
-    impl_->isolate->LowMemoryNotification();
-
-    // Also pump idle tasks on the platform if available.
     v8::platform::RunIdleTasks(g_platform.get(), impl_->isolate,
                                deadline_seconds);
 }
