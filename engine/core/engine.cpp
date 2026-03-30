@@ -121,10 +121,7 @@ void Engine::run() {
 #ifdef GG_ENABLE_SCRIPTS
         if (script_manager_) {
             script_manager_->poll_changes();
-        }
-        if (script_engine_) {
-            script_engine_->call_function("onUpdate",
-                "[" + std::to_string(FIXED_DT) + "]");
+            script_manager_->call_update(FIXED_DT);
         }
 #endif
 

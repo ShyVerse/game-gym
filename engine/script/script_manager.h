@@ -21,6 +21,7 @@ public:
     void load_all();
     void poll_changes();
     void reload(const std::string& path);
+    void call_update(float dt);
     [[nodiscard]] size_t loaded_count() const;
 
 private:

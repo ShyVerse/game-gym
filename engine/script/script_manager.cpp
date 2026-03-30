@@ -3,6 +3,7 @@
 #include "script/script_engine.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -27,7 +28,6 @@ struct ScriptManager::Impl {
     Impl(ScriptEngine& e, std::string dir)
         : engine(e), script_dir(std::move(dir)) {}
 
-    // Read an entire file into a string. Returns empty on failure.
     static std::string read_file(const std::string& path) {
         std::ifstream file(path);
         if (!file.is_open()) {
@@ -35,10 +35,12 @@ struct ScriptManager::Impl {
         }
         std::ostringstream oss;
         oss << file.rdbuf();
+        if (file.bad()) {
+            return {};
+        }
         return oss.str();
     }
 
-    // Escape a path for safe use inside a single-quoted shell argument.
     static std::string shell_escape(const std::string& s) {
         std::string result = "'";
         for (char c : s) {
@@ -52,8 +54,6 @@ struct ScriptManager::Impl {
         return result;
     }
 
-    // Compile a .ts file to .js using tsc.
-    // Returns the path of the generated .js file, or empty on failure.
     static std::string compile_typescript(const std::string& ts_path) {
         std::ostringstream cmd;
         cmd << "npx tsc --strict --noImplicitAny --target ES2020"
@@ -62,13 +62,81 @@ struct ScriptManager::Impl {
         if (rc != 0) {
             return {};
         }
-        // tsc writes .js next to the .ts file.
         fs::path js_path = ts_path;
         js_path.replace_extension(".js");
         if (fs::exists(js_path)) {
             return js_path.string();
         }
         return {};
+    }
+
+    // Escape a string for safe use as a JS string literal inside double quotes.
+    static std::string js_escape(const std::string& s) {
+        std::string result;
+        for (char c : s) {
+            if (c == '\\') {
+                result += "\\\\";
+            } else if (c == '"') {
+                result += "\\\"";
+            } else if (c == '\n') {
+                result += "\\n";
+            } else {
+                result += c;
+            }
+        }
+        return result;
+    }
+
+    // After executing a script, capture its lifecycle functions under a
+    // per-path key in globalThis.__gg_scripts, then clear the globals
+    // so the next script's definitions don't collide.
+    void capture_lifecycle(const std::string& path) {
+        const std::string key = js_escape(path);
+        const std::string js =
+            "globalThis.__gg_scripts = globalThis.__gg_scripts || {};\n"
+            "globalThis.__gg_scripts[\"" + key + "\"] = {\n"
+            "  onInit: typeof onInit === 'function' ? onInit : null,\n"
+            "  onUpdate: typeof onUpdate === 'function' ? onUpdate : null,\n"
+            "  onDestroy: typeof onDestroy === 'function' ? onDestroy : null,\n"
+            "};\n"
+            "if (typeof onInit === 'function') onInit = undefined;\n"
+            "if (typeof onUpdate === 'function') onUpdate = undefined;\n"
+            "if (typeof onDestroy === 'function') onDestroy = undefined;\n";
+        engine.execute(js, "<capture:" + path + ">");
+    }
+
+    void call_script_lifecycle(const std::string& path, const std::string& fn) {
+        const std::string key = js_escape(path);
+        const std::string js =
+            "(function() {\n"
+            "  var s = globalThis.__gg_scripts && globalThis.__gg_scripts[\"" + key + "\"];\n"
+            "  if (s && typeof s." + fn + " === 'function') { s." + fn + "(); }\n"
+            "})()";
+        engine.execute(js, "<lifecycle:" + fn + ">");
+    }
+
+    void call_all_updates(float dt) {
+        char buf[64];
+        std::snprintf(buf, sizeof(buf), "%.9g", static_cast<double>(dt));
+        const std::string js =
+            "(function() {\n"
+            "  var scripts = globalThis.__gg_scripts;\n"
+            "  if (!scripts) return;\n"
+            "  var dt = " + std::string(buf) + ";\n"
+            "  for (var key in scripts) {\n"
+            "    if (scripts[key] && typeof scripts[key].onUpdate === 'function') {\n"
+            "      scripts[key].onUpdate(dt);\n"
+            "    }\n"
+            "  }\n"
+            "})()";
+        engine.execute(js, "<onUpdate>");
+    }
+
+    void remove_script_entry(const std::string& path) {
+        const std::string key = js_escape(path);
+        engine.execute(
+            "if (globalThis.__gg_scripts) delete globalThis.__gg_scripts[\"" + key + "\"];",
+            "<remove:" + path + ">");
     }
 };
 
@@ -98,7 +166,6 @@ void ScriptManager::load_all() {
         return;
     }
 
-    // Collect all .js files and sort alphabetically for deterministic order.
     std::vector<std::string> js_files;
     for (const auto& entry : fs::directory_iterator(impl_->script_dir)) {
         if (entry.is_regular_file() && entry.path().extension() == ".js") {
@@ -119,9 +186,8 @@ void ScriptManager::load_all() {
         }
 
         impl_->loaded_scripts.insert(path);
-
-        // Call onInit() if the script defines it.
-        impl_->engine.call_function("onInit");
+        impl_->capture_lifecycle(path);
+        impl_->call_script_lifecycle(path, "onInit");
     }
 }
 
@@ -141,7 +207,6 @@ void ScriptManager::poll_changes() {
         auto ext = file_path.extension().string();
 
         if (ext == ".ts") {
-            // Compile TypeScript, then reload the generated .js.
             std::string js_path = Impl::compile_typescript(path);
             if (!js_path.empty()) {
                 reload(js_path);
@@ -157,15 +222,12 @@ void ScriptManager::poll_changes() {
 // ---------------------------------------------------------------------------
 
 void ScriptManager::reload(const std::string& path) {
-    // Call onDestroy() on the old module if it was previously loaded,
-    // then remove from loaded_scripts immediately so a failed re-execute
-    // does not leave a stale entry.
     if (impl_->loaded_scripts.count(path) > 0) {
-        impl_->engine.call_function("onDestroy");
+        impl_->call_script_lifecycle(path, "onDestroy");
+        impl_->remove_script_entry(path);
         impl_->loaded_scripts.erase(path);
     }
 
-    // Read and execute the new source.
     std::string source = Impl::read_file(path);
     if (source.empty()) {
         return;
@@ -177,9 +239,16 @@ void ScriptManager::reload(const std::string& path) {
     }
 
     impl_->loaded_scripts.insert(path);
+    impl_->capture_lifecycle(path);
+    impl_->call_script_lifecycle(path, "onInit");
+}
 
-    // Call onInit() on the freshly loaded script.
-    impl_->engine.call_function("onInit");
+// ---------------------------------------------------------------------------
+// call_update()
+// ---------------------------------------------------------------------------
+
+void ScriptManager::call_update(float dt) {
+    impl_->call_all_updates(dt);
 }
 
 // ---------------------------------------------------------------------------

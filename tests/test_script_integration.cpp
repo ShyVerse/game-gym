@@ -97,8 +97,7 @@ TEST_F(ScriptIntegrationTest, OnUpdateReceivesDeltaTime) {
 
     manager_->load_all();
 
-    auto call_result = engine_->call_function("onUpdate", "[0.016]");
-    EXPECT_TRUE(call_result.ok) << call_result.error;
+    manager_->call_update(0.016f);
 
     auto read_result = engine_->execute("globalThis.__dt");
     ASSERT_TRUE(read_result.ok) << read_result.error;
@@ -121,9 +120,8 @@ TEST_F(ScriptIntegrationTest, ScriptErrorDoesNotCrashEngine) {
 
     manager_->load_all();
 
-    // Call the throwing function -- should not crash.
-    auto result = engine_->call_function("onUpdate", "[0.016]");
-    EXPECT_FALSE(result.ok) << "Expected error from throwing script";
+    // call_update internally catches errors via TryCatch -- should not crash.
+    manager_->call_update(0.016f);
 
     // Engine should still be alive and functional.
     EXPECT_TRUE(engine_->is_alive());

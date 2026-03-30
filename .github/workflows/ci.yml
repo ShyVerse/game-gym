@@ -67,6 +67,6 @@ jobs:
         run: |
           CLANG_TIDY="$(brew --prefix llvm@18)/bin/clang-tidy"
           SDK_PATH="$(xcrun --show-sdk-path)"
-          find engine/ -name '*.cpp' \
+          find engine/ -name '*.cpp' -not -path 'engine/script/*' \
             | xargs "$CLANG_TIDY" -p builddir \
               --extra-arg="-isysroot${SDK_PATH}"

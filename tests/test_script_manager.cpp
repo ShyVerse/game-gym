@@ -70,9 +70,10 @@ TEST_F(ScriptManagerTest, LoadAllFindsJsFiles) {
 
     EXPECT_EQ(manager_->loaded_count(), 1u);
 
-    // Verify the function was defined in the engine.
-    auto result = engine_->call_function("onInit");
+    // Verify onInit was called (sets __hello).
+    auto result = engine_->execute("globalThis.__hello");
     EXPECT_TRUE(result.ok);
+    EXPECT_EQ(result.value, "world");
 }
 
 TEST_F(ScriptManagerTest, LoadAllCallsOnInit) {
