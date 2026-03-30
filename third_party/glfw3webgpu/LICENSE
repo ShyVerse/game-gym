@@ -1,0 +1,8 @@
+glfw3webgpu - Create a WGPUSurface from a GLFW window
+
+Origin: https://github.com/eliemichel/glfw3webgpu
+Author: Elie Michel
+License: MIT
+
+This is a minimal helper used to bridge GLFW and WebGPU surface creation.
+See the original repository for the full license text.
