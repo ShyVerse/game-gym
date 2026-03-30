@@ -86,11 +86,8 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         if (!engine->script_engine_) {
             throw std::runtime_error("Failed to create ScriptEngine (V8)");
         }
-        register_script_bindings(*engine->script_engine_,
-                                 *engine->world_,
-                                 *engine->physics_);
-        engine->script_manager_ = ScriptManager::create(*engine->script_engine_,
-                                                         config.script_dir);
+        register_script_bindings(*engine->script_engine_, *engine->world_, *engine->physics_);
+        engine->script_manager_ = ScriptManager::create(*engine->script_engine_, config.script_dir);
         if (engine->script_manager_) {
             engine->script_manager_->load_all();
         }
