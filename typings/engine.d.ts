@@ -1,32 +1,16 @@
+/// <reference path="../generated/engine_gen.d.ts" />
+
 // Type definitions for the game-gym scripting API (V8 runtime).
 // These declarations describe the global objects and lifecycle hooks
 // available to user scripts running inside the engine.
-
-// ---- Geometry primitives ----------------------------------------------------
-
-interface Vec3 {
-    x: number;
-    y: number;
-    z: number;
-}
-
-interface Quat {
-    x: number;
-    y: number;
-    z: number;
-    w: number;
-}
-
-interface TransformData {
-    position?: Vec3;
-    rotation?: Quat;
-    scale?: Vec3;
-}
+//
+// Geometry primitives (Vec3, Quat, Transform, Velocity), shape descriptors
+// (BoxShapeDesc, SphereShapeDesc, CapsuleShapeDesc), ContactEvent, RayHit,
+// MotionType and ContactType are defined in engine_gen.d.ts (auto-generated).
 
 // ---- Physics types ----------------------------------------------------------
 
 type ShapeType = "box" | "sphere" | "capsule";
-type MotionType = "static" | "dynamic" | "kinematic";
 
 interface BodyDef {
     shape: ShapeType;
@@ -39,22 +23,13 @@ interface BodyDef {
     restitution?: number;
 }
 
-interface RayHit {
-    bodyId: number;
-    fraction: number;
-    point: Vec3;
-    normal: Vec3;
-}
-
-interface ContactEvent {
-    bodyIdA: number;
-    bodyIdB: number;
-    type: "begin" | "persist" | "end";
-    point: Vec3;
-    normal: Vec3;
-}
-
 // ---- ECS types --------------------------------------------------------------
+
+interface TransformData {
+    position?: Vec3;
+    rotation?: Quat;
+    scale?: Vec3;
+}
 
 interface EntityInfo {
     name: string;

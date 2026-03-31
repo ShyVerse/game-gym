@@ -49,6 +49,18 @@ jobs:
       - name: Test
         run: meson test -C builddir --print-errorlogs
 
+  codegen-check:
+    name: Codegen Freshness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python dependencies
+        run: pip install -r scripts/requirements-codegen.txt
+
+      - name: Check generated files are up to date
+        run: python scripts/codegen.py --check
+
   lint:
     name: Clang-Tidy
     runs-on: macos-latest

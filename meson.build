@@ -151,6 +151,8 @@ else
   v8_dep = dependency('', required: false)
 endif
 
+generated_inc = include_directories('generated')
+
 subdir('engine')
 subdir('app')
 subdir('tests')
