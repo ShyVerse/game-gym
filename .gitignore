@@ -31,6 +31,13 @@ docs/
 # ImGui runtime config
 imgui.ini
 
+# Python venv
+.venv/
+
+# Codegen temporary shadow headers
+generated/_codegen_shadow/
+generated/_codegen_macros.h
+
 # Meson subproject downloads (fetched via wrap files)
 subprojects/flecs/
 subprojects/glfw/
@@ -38,3 +45,4 @@ subprojects/gtest/
 subprojects/jolt/
 subprojects/nlohmann_json-*/
 subprojects/.wraplock
+__pycache__/

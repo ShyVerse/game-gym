@@ -28,7 +28,7 @@ struct GG_SCRIPTABLE CapsuleShapeDesc {
 
 using ColliderShape = std::variant<BoxShapeDesc, SphereShapeDesc, CapsuleShapeDesc>;
 
-struct GG_SCRIPTABLE BodyDef {
+struct BodyDef {
     ColliderShape shape = BoxShapeDesc{};
     MotionType motion_type = MotionType::Dynamic;
     PhysicsLayer layer = PhysicsLayer::Dynamic;
