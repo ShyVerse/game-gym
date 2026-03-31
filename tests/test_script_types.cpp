@@ -1,6 +1,7 @@
 #include "ecs/components.h"
 #include "physics/physics_components.h"
-#include "script/script_types.h"
+#include "script_types_gen.h"
+#include "script/script_types_manual.h"
 
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>

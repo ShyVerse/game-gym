@@ -5,7 +5,9 @@
 #include "physics/physics_components.h"
 #include "physics/physics_world.h"
 #include "script/script_engine.h"
-#include "script/script_types.h"
+#include "script_types_gen.h"
+#include "script/script_types_manual.h"
+#include "codegen_bindings_check.h"
 
 #include <flecs.h>
 #include <nlohmann/json.hpp>
@@ -402,6 +404,20 @@ void register_script_bindings(ScriptEngine& engine, World& world, PhysicsWorld& 
     // -- Inject JS wrapper objects --------------------------------------------
 
     engine.execute(kJsWrapperCode, "<script_bindings>");
+
+    gg::codegen::check_all_bindings();
 }
 
 } // namespace gg
+
+namespace gg::codegen {
+void assert_bound_Vec3() {}
+void assert_bound_Quat() {}
+void assert_bound_Transform() {}
+void assert_bound_Velocity() {}
+void assert_bound_BoxShapeDesc() {}
+void assert_bound_SphereShapeDesc() {}
+void assert_bound_CapsuleShapeDesc() {}
+void assert_bound_ContactEvent() {}
+void assert_bound_RayHit() {}
+} // namespace gg::codegen
