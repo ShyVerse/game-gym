@@ -5,9 +5,8 @@
 // std::variant field.  The conversions here use the generated enum helpers
 // (motion_type_to_string / motion_type_from_string) from script_types_gen.h.
 //
-// Include AFTER script_types_gen.h.
-
 #include "physics/physics_components.h"
+#include "script_types_gen.h"
 
 #include <nlohmann/json.hpp>
 #include <string>

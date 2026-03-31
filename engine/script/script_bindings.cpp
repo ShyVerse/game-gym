@@ -1,13 +1,13 @@
 #include "script/script_bindings.h"
 
+#include "codegen_bindings_check.h"
 #include "ecs/components.h"
 #include "ecs/world.h"
 #include "physics/physics_components.h"
 #include "physics/physics_world.h"
 #include "script/script_engine.h"
-#include "script_types_gen.h"
 #include "script/script_types_manual.h"
-#include "codegen_bindings_check.h"
+#include "script_types_gen.h"
 
 #include <flecs.h>
 #include <nlohmann/json.hpp>
