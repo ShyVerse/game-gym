@@ -1,23 +1,24 @@
 #pragma once
+#include "script/scriptable.h"
 #include <string>
 
 namespace gg {
 
-struct Vec3 {
+struct GG_SCRIPTABLE Vec3 {
     float x = 0.0f, y = 0.0f, z = 0.0f;
 };
 
-struct Quat {
+struct GG_SCRIPTABLE Quat {
     float x = 0.0f, y = 0.0f, z = 0.0f, w = 1.0f;
 };
 
-struct Transform {
+struct GG_SCRIPTABLE Transform {
     Vec3 position{};
     Quat rotation{};
     Vec3 scale{1.0f, 1.0f, 1.0f};
 };
 
-struct Velocity {
+struct GG_SCRIPTABLE Velocity {
     Vec3 linear{};
     Vec3 angular{};
 };
