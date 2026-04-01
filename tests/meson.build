@@ -68,6 +68,12 @@ if get_option('enable_tests')
   )
   test('camera', test_camera)
 
+  test_mesh = executable('test_mesh',
+    'test_mesh.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('mesh', test_mesh)
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',

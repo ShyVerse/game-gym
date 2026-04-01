@@ -14,6 +14,7 @@ engine_sources = files(
   'compute/gpu_buffer.cpp',
   'compute/compute_pipeline.cpp',
   'renderer/camera.cpp',
+  'renderer/mesh.cpp',
   'editor/editor_ui.cpp',
   'mcp/mcp_server.cpp',
   'mcp/mcp_tools.cpp',
