@@ -159,6 +159,22 @@ void Engine::run() {
         editor_->begin_frame();
         editor_->draw_panels(*world_, *physics_);
 
+        // Handle window resize: update surface and depth texture dimensions.
+        {
+            uint32_t fb_w = window_->framebuffer_width();
+            uint32_t fb_h = window_->framebuffer_height();
+            if (fb_w != gpu_->surface_width() || fb_h != gpu_->surface_height()) {
+                gpu_->resize(fb_w, fb_h);
+                if (mesh_renderer_) {
+                    mesh_renderer_->resize_depth(fb_w, fb_h);
+                }
+                if (camera_) {
+                    camera_->set_aspect(static_cast<float>(fb_w) /
+                                        static_cast<float>(fb_h > 0 ? fb_h : 1));
+                }
+            }
+        }
+
         if (mesh_renderer_) {
             renderer_->set_depth_view(mesh_renderer_->depth_view());
         }
