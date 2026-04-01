@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace gg {
 
@@ -12,6 +13,9 @@ class PhysicsWorld;
 class EditorUI;
 class McpServer;
 class McpTransport;
+class Camera;
+class Mesh;
+class MeshRenderer;
 
 #ifdef GG_ENABLE_SCRIPTS
 class ScriptEngine;
@@ -24,6 +28,7 @@ struct EngineConfig {
     uint32_t height = 720;
     bool resizable = true;
     std::string shader_path = "shaders/triangle.wgsl";
+    std::string model_path = "";
     bool enable_mcp = false;
     bool enable_scripts = false;
     std::string script_dir = "assets/scripts";
@@ -62,6 +67,10 @@ private:
     std::unique_ptr<EditorUI> editor_;
     std::unique_ptr<McpServer> mcp_;
     std::unique_ptr<McpTransport> mcp_transport_;
+
+    std::unique_ptr<Camera> camera_;
+    std::unique_ptr<MeshRenderer> mesh_renderer_;
+    std::vector<std::unique_ptr<Mesh>> meshes_;
 
 #ifdef GG_ENABLE_SCRIPTS
     std::unique_ptr<ScriptEngine> script_engine_;

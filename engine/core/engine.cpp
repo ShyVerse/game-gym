@@ -7,7 +7,11 @@
 #include "mcp/mcp_stdio_transport.h"
 #include "mcp/mcp_tools.h"
 #include "physics/physics_world.h"
+#include "renderer/camera.h"
+#include "renderer/gltf_loader.h"
 #include "renderer/gpu_context.h"
+#include "renderer/mesh.h"
+#include "renderer/mesh_renderer.h"
 #include "renderer/renderer.h"
 
 #ifdef GG_ENABLE_SCRIPTS
@@ -73,6 +77,15 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         throw std::runtime_error("Failed to create EditorUI");
     }
 
+    if (!config.model_path.empty()) {
+        engine->meshes_ = GltfLoader::load(config.model_path, *engine->gpu_);
+        if (!engine->meshes_.empty()) {
+            engine->mesh_renderer_ = MeshRenderer::create(*engine->gpu_);
+            engine->camera_ = Camera::create();
+            engine->camera_->set_aspect(float(config.width) / float(config.height));
+        }
+    }
+
     if (config.enable_mcp) {
         engine->mcp_ = McpServer::create("game-gym-engine", "1.0.0");
         register_mcp_tools(*engine->mcp_, *engine->world_, *engine->physics_);
@@ -128,12 +141,37 @@ void Engine::run() {
         // ECS progress (VelocitySystem for non-physics entities, other systems)
         world_->progress(FIXED_DT);
 
+        if (camera_) {
+            static float last_mx = window_->mouse_x();
+            static float last_my = window_->mouse_y();
+            float mx = window_->mouse_x();
+            float my = window_->mouse_y();
+            if (window_->mouse_button(0)) {
+                camera_->orbit(mx - last_mx, my - last_my);
+            }
+            camera_->zoom(window_->scroll_delta_y());
+            window_->reset_scroll();
+            last_mx = mx;
+            last_my = my;
+        }
+
         // Editor: begin new ImGui frame and build panel draw calls
         editor_->begin_frame();
         editor_->draw_panels(*world_, *physics_);
 
+        if (mesh_renderer_) {
+            renderer_->set_depth_view(mesh_renderer_->depth_view());
+        }
+
         if (renderer_->begin_frame()) {
-            renderer_->draw_triangle();
+            if (mesh_renderer_ && camera_ && !meshes_.empty()) {
+                mesh_renderer_->update_camera(*camera_);
+                for (const auto& mesh : meshes_) {
+                    mesh_renderer_->draw(*mesh, renderer_->render_pass());
+                }
+            } else {
+                renderer_->draw_triangle();
+            }
             // Render ImGui draw data into the active render pass
             editor_->render(renderer_->render_pass());
             renderer_->end_frame();
