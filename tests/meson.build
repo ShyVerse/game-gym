@@ -56,6 +56,12 @@ if get_option('enable_tests')
   )
   test('mat4', test_mat4)
 
+  test_window_input = executable('test_window_input',
+    'test_window_input.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('window_input', test_window_input)
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',
