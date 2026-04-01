@@ -174,17 +174,33 @@ bool Renderer::begin_frame() {
     color_att.storeOp = WGPUStoreOp_Store;
     color_att.clearValue = {.r = 0.1, .g = 0.1, .b = 0.1, .a = 1.0};
 
+    WGPURenderPassDepthStencilAttachment depth_att{};
+    if (external_depth_view_) {
+        depth_att.view = external_depth_view_;
+        depth_att.depthLoadOp = WGPULoadOp_Clear;
+        depth_att.depthStoreOp = WGPUStoreOp_Store;
+        depth_att.depthClearValue = 1.0f;
+        depth_att.depthReadOnly = false;
+        depth_att.stencilLoadOp = WGPULoadOp_Undefined;
+        depth_att.stencilStoreOp = WGPUStoreOp_Undefined;
+        depth_att.stencilReadOnly = true;
+    }
+
     WGPURenderPassDescriptor pass_desc{};
     pass_desc.nextInChain = nullptr;
     pass_desc.label = {.data = "main-pass", .length = WGPU_STRLEN};
     pass_desc.colorAttachmentCount = 1;
     pass_desc.colorAttachments = &color_att;
-    pass_desc.depthStencilAttachment = nullptr;
+    pass_desc.depthStencilAttachment = external_depth_view_ ? &depth_att : nullptr;
     pass_desc.occlusionQuerySet = nullptr;
     pass_desc.timestampWrites = nullptr;
 
     render_pass_ = wgpuCommandEncoderBeginRenderPass(encoder_, &pass_desc);
     return true;
+}
+
+void Renderer::set_depth_view(WGPUTextureView depth_view) {
+    external_depth_view_ = depth_view;
 }
 
 void Renderer::draw_triangle() {

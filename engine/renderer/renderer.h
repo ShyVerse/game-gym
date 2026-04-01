@@ -23,6 +23,8 @@ public:
     void draw_triangle();
     void end_frame();
 
+    void set_depth_view(WGPUTextureView depth_view);
+
     [[nodiscard]] WGPURenderPassEncoder render_pass() const { return render_pass_; }
 
 private:
@@ -36,6 +38,8 @@ private:
     WGPUTextureView frame_view_ = nullptr;
     WGPUCommandEncoder encoder_ = nullptr;
     WGPURenderPassEncoder render_pass_ = nullptr;
+
+    WGPUTextureView external_depth_view_ = nullptr;
 };
 
 } // namespace gg

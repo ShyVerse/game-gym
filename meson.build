@@ -152,6 +152,7 @@ else
 endif
 
 generated_inc = include_directories('generated')
+cgltf_inc = include_directories('third_party/cgltf')
 
 subdir('engine')
 subdir('app')

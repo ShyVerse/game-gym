@@ -34,11 +34,18 @@ public:
     [[nodiscard]] uint32_t framebuffer_height() const;
     [[nodiscard]] GLFWwindow* native_handle() const;
 
+    [[nodiscard]] float mouse_x() const;
+    [[nodiscard]] float mouse_y() const;
+    [[nodiscard]] bool mouse_button(int button) const;
+    [[nodiscard]] float scroll_delta_y() const;
+    void reset_scroll();
+
 private:
     explicit Window(GLFWwindow* handle, uint32_t w, uint32_t h);
     GLFWwindow* handle_ = nullptr;
     uint32_t width_ = 0;
     uint32_t height_ = 0;
+    mutable float scroll_y_accum_ = 0.0f;
 };
 
 } // namespace gg
