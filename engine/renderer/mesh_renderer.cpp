@@ -1,9 +1,9 @@
 #include "renderer/mesh_renderer.h"
 
+#include "math/mat4.h"
 #include "renderer/camera.h"
 #include "renderer/gpu_context.h"
 #include "renderer/mesh.h"
-#include "math/mat4.h"
 
 #include <cstdio>
 #include <cstring>
@@ -253,7 +253,8 @@ void MeshRenderer::draw(const Mesh& mesh, WGPURenderPassEncoder pass) {
     wgpuRenderPassEncoderSetPipeline(pass, pipeline_);
     wgpuRenderPassEncoderSetBindGroup(pass, 0, bind_group_, 0, nullptr);
     wgpuRenderPassEncoderSetVertexBuffer(pass, 0, mesh.vertex_buffer(), 0, WGPU_WHOLE_SIZE);
-    wgpuRenderPassEncoderSetIndexBuffer(pass, mesh.index_buffer(), WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
+    wgpuRenderPassEncoderSetIndexBuffer(
+        pass, mesh.index_buffer(), WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
     wgpuRenderPassEncoderDrawIndexed(pass, mesh.index_count(), 1, 0, 0, 0);
 }
 
@@ -291,7 +292,8 @@ void MeshRenderer::resize_depth(uint32_t width, uint32_t height) {
 
     depth_texture_ = wgpuDeviceCreateTexture(ctx_.device(), &tex_desc);
     if (!depth_texture_) {
-        std::fprintf(stderr, "[MeshRenderer] Failed to create depth texture (%ux%u)\n", width, height);
+        std::fprintf(
+            stderr, "[MeshRenderer] Failed to create depth texture (%ux%u)\n", width, height);
         return;
     }
 

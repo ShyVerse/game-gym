@@ -1,4 +1,5 @@
 #include "renderer/mesh.h"
+
 #include "renderer/gpu_context.h"
 
 namespace gg {
@@ -23,8 +24,7 @@ std::unique_ptr<Mesh> Mesh::create(GpuContext& ctx,
         desc.size = vertices.size() * sizeof(Vertex);
         desc.mappedAtCreation = false;
         mesh->vertex_buffer_ = wgpuDeviceCreateBuffer(ctx.device(), &desc);
-        wgpuQueueWriteBuffer(ctx.queue(), mesh->vertex_buffer_, 0,
-                             vertices.data(), desc.size);
+        wgpuQueueWriteBuffer(ctx.queue(), mesh->vertex_buffer_, 0, vertices.data(), desc.size);
     }
 
     // Index buffer
@@ -36,8 +36,7 @@ std::unique_ptr<Mesh> Mesh::create(GpuContext& ctx,
         desc.size = indices.size() * sizeof(uint32_t);
         desc.mappedAtCreation = false;
         mesh->index_buffer_ = wgpuDeviceCreateBuffer(ctx.device(), &desc);
-        wgpuQueueWriteBuffer(ctx.queue(), mesh->index_buffer_, 0,
-                             indices.data(), desc.size);
+        wgpuQueueWriteBuffer(ctx.queue(), mesh->index_buffer_, 0, indices.data(), desc.size);
     }
 
     return mesh;

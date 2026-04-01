@@ -1,5 +1,5 @@
-#include "renderer/gltf_loader.h"
 #include "core/window.h"
+#include "renderer/gltf_loader.h"
 #include "renderer/gpu_context.h"
 #include "renderer/mesh.h"
 
@@ -10,8 +10,7 @@
 class GltfLoaderTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        window_ = gg::Window::create(
-            {.title = "gltf-test", .width = 320, .height = 240});
+        window_ = gg::Window::create({.title = "gltf-test", .width = 320, .height = 240});
         ASSERT_NE(window_, nullptr);
         gpu_ = gg::GpuContext::create(*window_);
         ASSERT_NE(gpu_, nullptr);

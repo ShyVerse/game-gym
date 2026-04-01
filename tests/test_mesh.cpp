@@ -1,13 +1,13 @@
-#include "renderer/mesh.h"
 #include "core/window.h"
 #include "renderer/gpu_context.h"
+#include "renderer/mesh.h"
+
 #include <gtest/gtest.h>
 
 class MeshTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        window_ = gg::Window::create(
-            {.title = "mesh-test", .width = 320, .height = 240});
+        window_ = gg::Window::create({.title = "mesh-test", .width = 320, .height = 240});
         ASSERT_NE(window_, nullptr);
         gpu_ = gg::GpuContext::create(*window_);
         ASSERT_NE(gpu_, nullptr);

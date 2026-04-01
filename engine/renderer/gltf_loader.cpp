@@ -1,10 +1,10 @@
 #define CGLTF_IMPLEMENTATION
-#include <cgltf.h>
-
 #include "renderer/gltf_loader.h"
+
 #include "renderer/gpu_context.h"
 #include "renderer/mesh.h"
 
+#include <cgltf.h>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -17,15 +17,13 @@ namespace {
 std::vector<uint32_t> read_indices(const cgltf_accessor* accessor) {
     std::vector<uint32_t> indices(accessor->count);
     for (cgltf_size i = 0; i < accessor->count; ++i) {
-        indices[i] =
-            static_cast<uint32_t>(cgltf_accessor_read_index(accessor, i));
+        indices[i] = static_cast<uint32_t>(cgltf_accessor_read_index(accessor, i));
     }
     return indices;
 }
 
 /// Read float data from a cgltf accessor.
-std::vector<float> read_floats(const cgltf_accessor* accessor,
-                               cgltf_size components) {
+std::vector<float> read_floats(const cgltf_accessor* accessor, cgltf_size components) {
     const cgltf_size total = accessor->count * components;
     std::vector<float> out(total);
     cgltf_accessor_unpack_floats(accessor, out.data(), total);
@@ -72,23 +70,19 @@ std::vector<float> generate_flat_normals(const std::vector<float>& positions,
 
 } // namespace
 
-std::vector<std::unique_ptr<Mesh>> GltfLoader::load(const std::string& path,
-                                                     GpuContext& ctx) {
+std::vector<std::unique_ptr<Mesh>> GltfLoader::load(const std::string& path, GpuContext& ctx) {
     std::vector<std::unique_ptr<Mesh>> result;
 
     cgltf_options options{};
     cgltf_data* data = nullptr;
 
     if (cgltf_parse_file(&options, path.c_str(), &data) != cgltf_result_success) {
-        std::fprintf(stderr, "GltfLoader: failed to parse '%s'\n",
-                     path.c_str());
+        std::fprintf(stderr, "GltfLoader: failed to parse '%s'\n", path.c_str());
         return result;
     }
 
-    if (cgltf_load_buffers(&options, data, path.c_str()) !=
-        cgltf_result_success) {
-        std::fprintf(stderr, "GltfLoader: failed to load buffers for '%s'\n",
-                     path.c_str());
+    if (cgltf_load_buffers(&options, data, path.c_str()) != cgltf_result_success) {
+        std::fprintf(stderr, "GltfLoader: failed to load buffers for '%s'\n", path.c_str());
         cgltf_free(data);
         return result;
     }

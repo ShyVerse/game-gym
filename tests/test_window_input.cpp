@@ -6,8 +6,7 @@
 class WindowInputTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        window_ = gg::Window::create(
-            {.title = "input-test", .width = 320, .height = 240});
+        window_ = gg::Window::create({.title = "input-test", .width = 320, .height = 240});
         ASSERT_NE(window_, nullptr);
     }
     std::unique_ptr<gg::Window> window_;

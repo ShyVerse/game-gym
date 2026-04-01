@@ -1,4 +1,5 @@
 #include "renderer/camera.h"
+
 #include <cmath>
 #include <gtest/gtest.h>
 

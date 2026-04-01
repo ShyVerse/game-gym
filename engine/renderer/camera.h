@@ -1,6 +1,8 @@
 #pragma once
 #include "math/mat4.h"
+
 #include <memory>
+#include <numbers>
 
 namespace gg {
 
@@ -25,7 +27,7 @@ private:
     float pitch_ = 0.3f;
     float distance_ = 5.0f;
     Vec3 target_ = {0.0f, 0.0f, 0.0f};
-    float fov_ = 45.0f * (3.14159265f / 180.0f);
+    float fov_ = 45.0f * (std::numbers::pi_v<float> / 180.0f);
     float aspect_ = 16.0f / 9.0f;
     float near_ = 0.1f;
     float far_ = 1000.0f;

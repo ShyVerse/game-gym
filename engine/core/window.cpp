@@ -66,8 +66,10 @@ Window::~Window() {
 }
 
 Window::Window(Window&& other) noexcept
-    : handle_(other.handle_), width_(other.width_), height_(other.height_),
-      scroll_y_accum_(other.scroll_y_accum_) {
+    : handle_(other.handle_)
+    , width_(other.width_)
+    , height_(other.height_)
+    , scroll_y_accum_(other.scroll_y_accum_) {
     if (handle_) {
         glfwSetWindowUserPointer(handle_, this);
     }

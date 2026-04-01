@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <gtest/gtest.h>
+#include <numbers>
 
 TEST(Mat4Test, IdentityIsIdentity) {
     auto m = gg::Mat4::identity();
@@ -23,7 +24,7 @@ TEST(Mat4Test, IdentityTimesIdentity) {
 }
 
 TEST(Mat4Test, PerspectiveHasCorrectAspect) {
-    float fov = 45.0f * (3.14159265f / 180.0f);
+    float fov = 45.0f * (std::numbers::pi_v<float> / 180.0f);
     auto p = gg::Mat4::perspective(fov, 16.0f / 9.0f, 0.1f, 1000.0f);
     float t = std::tan(fov / 2.0f);
     EXPECT_NEAR(p.data[0], 1.0f / ((16.0f / 9.0f) * t), 1e-5f);

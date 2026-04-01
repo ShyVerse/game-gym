@@ -1,4 +1,5 @@
 #include "renderer/camera.h"
+
 #include <algorithm>
 #include <cmath>
 

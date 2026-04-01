@@ -20,8 +20,7 @@ struct Mat4 {
         return m;
     }
 
-    static Mat4 perspective(float fov_rad, float aspect, float near,
-                            float far) {
+    static Mat4 perspective(float fov_rad, float aspect, float near, float far) {
         Mat4 m{};
         std::memset(m.data, 0, sizeof(m.data));
         float t = std::tan(fov_rad / 2.0f);
@@ -33,8 +32,7 @@ struct Mat4 {
         return m;
     }
 
-    static Mat4 look_at(const Vec3& eye, const Vec3& target,
-                        const Vec3& up) {
+    static Mat4 look_at(const Vec3& eye, const Vec3& target, const Vec3& up) {
         float fx = target.x - eye.x;
         float fy = target.y - eye.y;
         float fz = target.z - eye.z;
