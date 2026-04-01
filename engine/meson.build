@@ -16,6 +16,7 @@ engine_sources = files(
   'renderer/camera.cpp',
   'renderer/mesh.cpp',
   'renderer/gltf_loader.cpp',
+  'renderer/mesh_renderer.cpp',
   'editor/editor_ui.cpp',
   'mcp/mcp_server.cpp',
   'mcp/mcp_tools.cpp',
