@@ -62,6 +62,12 @@ if get_option('enable_tests')
   )
   test('window_input', test_window_input)
 
+  test_camera = executable('test_camera',
+    'test_camera.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('camera', test_camera)
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',

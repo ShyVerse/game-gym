@@ -13,6 +13,7 @@ engine_sources = files(
   'physics/physics_world.cpp',
   'compute/gpu_buffer.cpp',
   'compute/compute_pipeline.cpp',
+  'renderer/camera.cpp',
   'editor/editor_ui.cpp',
   'mcp/mcp_server.cpp',
   'mcp/mcp_tools.cpp',
