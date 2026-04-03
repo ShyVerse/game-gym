@@ -1,0 +1,14 @@
+{
+  "entities": [
+    {
+      "name": "world_root",
+      "transform": {
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "rotation": { "x": 0, "y": 0, "z": 0, "w": 1 },
+        "scale": { "x": 1, "y": 1, "z": 1 }
+      },
+      "mesh_asset": "assets/models/start-pyramid.gltf",
+      "script_asset": "assets/scripts/spin.ts"
+    }
+  ]
+}

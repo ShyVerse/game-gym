@@ -29,6 +29,9 @@ struct EngineConfig {
     bool resizable = true;
     std::string shader_path = "shaders/triangle.wgsl";
     std::string model_path = "";
+    std::string project_file = "";
+    std::string startup_scene_override = "";
+    bool enable_project_boot = false;
     bool enable_mcp = false;
     bool enable_scripts = false;
     std::string script_dir = "assets/scripts";
@@ -71,6 +74,11 @@ private:
     std::unique_ptr<Camera> camera_;
     std::unique_ptr<MeshRenderer> mesh_renderer_;
     std::vector<std::unique_ptr<Mesh>> meshes_;
+    std::string active_project_path_;
+    std::string active_scene_path_;
+    std::string boot_status_text_;
+    size_t loaded_mesh_asset_count_ = 0;
+    size_t loaded_script_count_ = 0;
 
 #ifdef GG_ENABLE_SCRIPTS
     std::unique_ptr<ScriptEngine> script_engine_;

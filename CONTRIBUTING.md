@@ -9,6 +9,7 @@ bash scripts/setup-imgui.sh
 meson setup builddir
 meson compile -C builddir
 meson test -C builddir
+./builddir/app/game-gym
 ```
 
 ### Optional: V8 Scripting
@@ -24,6 +25,14 @@ meson compile -C builddir
 ```bash
 pip install -r scripts/requirements-codegen.txt
 python scripts/codegen.py
+```
+
+### Optional: Coverage Gate
+
+```bash
+python3 -m pip install -r scripts/requirements-coverage.txt
+bash scripts/install-git-hooks.sh
+python3 scripts/check_coverage.py --builddir builddir-coverage --summary-out builddir-coverage/coverage-summary.json
 ```
 
 ## Code Style
@@ -46,6 +55,8 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `style`
 - Framework: Google Test
 - Every module has a corresponding `tests/test_<module>.cpp`
 - Run specific test: `meson test -C builddir <test_name> -v`
+- Default boot path: `./builddir/app/game-gym` loads `project.ggym` from the repo root
+- Coverage gate threshold lives in `scripts/coverage-threshold.json`
 
 ## Adding Scriptable Types
 

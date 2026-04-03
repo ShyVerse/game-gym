@@ -1,6 +1,7 @@
 # Game-Gym Engine
 
 A custom C++20 3D game engine built on WebGPU, designed for VR-scale applications.
+The default boot path now loads `project.ggym`, opens the startup scene, and runs attached scripts from disk.
 
 ## Features
 
@@ -48,9 +49,38 @@ meson test -C builddir
 ./builddir/app/game-gym
 ```
 
+By default, the engine looks for `project.ggym` in the repo root and boots `scenes/start.scene.json`.
+The sample project included here shows a file-backed world with a startup mesh and TypeScript script.
+
+## Project Boot
+
+The minimal Unity-style boot flow is file-based:
+
+- `project.ggym` points to the startup scene
+- `scenes/*.scene.json` describes named entities and file references
+- `assets/models/*.gltf` or `.glb` provide renderable geometry
+- `assets/scripts/*.ts` are compiled and loaded on startup when referenced by the scene
+
+## Coverage Gate
+
+Coverage is enforced on every push and in GitHub Actions.
+
+- Threshold file: `scripts/coverage-threshold.json`
+- Local hook installer: `bash scripts/install-git-hooks.sh`
+- Manual run: `python3 scripts/check_coverage.py --builddir builddir-coverage --summary-out builddir-coverage/coverage-summary.json`
+
+The coverage gate uses a separate `builddir-coverage` build with Meson's `b_coverage=true` option and evaluates total line coverage with `gcovr`.
+
+Sample files included in the repo:
+
+- `project.ggym`
+- `scenes/start.scene.json`
+- `assets/models/start-pyramid.gltf`
+- `assets/scripts/spin.ts`
+
 ## 3D Model Rendering
 
-Load a glTF model exported from Blender:
+Load a glTF model exported from Blender in direct debug mode:
 
 ```bash
 ./builddir/app/game-gym --model assets/models/your_model.glb
@@ -75,7 +105,7 @@ meson compile -C builddir
 ./builddir/app/game-gym
 ```
 
-Scripts in `assets/scripts/` are automatically loaded. Example:
+Scene-referenced scripts in `assets/scripts/` are automatically compiled and loaded. Example:
 
 ```typescript
 function onInit(): void {

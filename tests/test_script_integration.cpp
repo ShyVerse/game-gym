@@ -5,6 +5,7 @@
 #include "script/script_engine.h"
 #include "script/script_manager.h"
 
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -151,4 +152,45 @@ TEST_F(ScriptIntegrationTest, MultipleScriptsLoadInOrder) {
     auto result = engine_->execute("globalThis.__order");
     ASSERT_TRUE(result.ok) << result.error;
     EXPECT_EQ(result.value, "AB");
+}
+
+TEST_F(ScriptIntegrationTest, LoadPathsCompilesAndRunsTypeScriptOnStartup) {
+    if (std::system("command -v npx >/dev/null 2>&1") != 0) {
+        GTEST_SKIP() << "npx is not available in this environment";
+    }
+
+    write_js("boot.ts",
+             "declare const world: { createEntity(name: string): unknown; };\n"
+             "function onInit() {\n"
+             "    world.createEntity('ts_boot_marker');\n"
+             "}\n");
+
+    manager_->load_paths({(tmp_dir_ / "boot.ts").string()});
+
+    bool found = false;
+    world_->raw().each([&](flecs::entity, const gg::Name& n) {
+        if (n.value == "ts_boot_marker") {
+            found = true;
+        }
+    });
+
+    EXPECT_TRUE(found);
+}
+
+TEST_F(ScriptIntegrationTest, LoadPathsDoesNotFallbackToDirectoryScriptsWhenEmpty) {
+    write_js("ambient.js",
+             "function onInit() {\n"
+             "    world.createEntity('ambient_script_entity');\n"
+             "}\n");
+
+    manager_->load_paths({});
+
+    bool found = false;
+    world_->raw().each([&](flecs::entity, const gg::Name& n) {
+        if (n.value == "ambient_script_entity") {
+            found = true;
+        }
+    });
+
+    EXPECT_FALSE(found);
 }
