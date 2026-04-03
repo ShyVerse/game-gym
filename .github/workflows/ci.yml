@@ -64,7 +64,7 @@ jobs:
       - name: Coverage Helper Tests
         run: |
           python -m pip install pytest -r scripts/requirements-coverage.txt
-          pytest -q tests/test_codegen.py tests/test_coverage_gate.py
+          pytest -q tests/test_codegen.py tests/test_coverage_gate.py tests/test_coverage_comment.py
 
   lint:
     name: Clang-Tidy
@@ -95,8 +95,13 @@ jobs:
   coverage:
     name: Coverage Gate
     runs-on: macos-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install dependencies
         run: brew install meson ninja
@@ -125,3 +130,28 @@ jobs:
             --builddir builddir-coverage \
             --summary-out builddir-coverage/coverage-summary.json \
             --fail-under-file scripts/coverage-threshold.json
+
+      - name: Collect changed files
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          git diff --name-only \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.sha }}" > builddir-coverage/changed-files.txt
+
+      - name: Render coverage comment
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          . .venv-ci/bin/activate
+          python scripts/render_coverage_comment.py \
+            --summary-json builddir-coverage/coverage-summary.json \
+            --changed-files builddir-coverage/changed-files.txt \
+            --threshold-file scripts/coverage-threshold.json \
+            --output builddir-coverage/coverage-comment.md
+
+      - name: Coverage Report
+        uses: marocchino/sticky-pull-request-comment@v3
+        if: always() && github.event_name == 'pull_request'
+        with:
+          header: coverage-report
+          path: builddir-coverage/coverage-comment.md
+          skip_unchanged: true
