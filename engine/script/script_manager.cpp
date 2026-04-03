@@ -219,7 +219,7 @@ struct ScriptManager::Impl {
                 manager.reload(js_path);
             }
             if (it->dirty) {
-                requeue.push_back(it->source_path);
+                requeue.push_back(std::move(it->source_path));
             }
             it = pending_compiles.erase(it);
         }
@@ -293,6 +293,8 @@ void ScriptManager::poll_changes() {
 
     impl_->drain_completed_compiles(*this);
     auto changed = impl_->watcher->poll_changes();
+    std::sort(changed.begin(), changed.end());
+    changed.erase(std::unique(changed.begin(), changed.end()), changed.end());
 
     for (const auto& path : changed) {
         fs::path file_path(path);
