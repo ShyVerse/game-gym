@@ -1,0 +1,29 @@
+#!/bin/sh
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+common_git_dir=$(git rev-parse --git-common-dir)
+common_root=$(cd "$common_git_dir/.." && pwd)
+cd "$repo_root"
+
+if [ -x "$repo_root/.venv/bin/python" ]; then
+  PYTHON_BIN="$repo_root/.venv/bin/python"
+elif [ -x "$common_root/.venv/bin/python" ]; then
+  PYTHON_BIN="$common_root/.venv/bin/python"
+else
+  PYTHON_BIN="$(command -v python3)"
+fi
+
+echo "pre-push: running build check..."
+meson compile -C builddir
+
+echo "pre-push: running tests..."
+meson test -C builddir --print-errorlogs
+
+echo "pre-push: running coverage gate..."
+"$PYTHON_BIN" scripts/check_coverage.py \
+  --builddir builddir-coverage \
+  --summary-out builddir-coverage/coverage-summary.json \
+  --fail-under-file scripts/coverage-threshold.json
+
+echo "pre-push: all checks passed"

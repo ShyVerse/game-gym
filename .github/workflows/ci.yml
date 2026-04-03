@@ -61,6 +61,11 @@ jobs:
       - name: Check generated files are up to date
         run: python scripts/codegen.py --check
 
+      - name: Coverage Helper Tests
+        run: |
+          python -m pip install pytest -r scripts/requirements-coverage.txt
+          pytest -q tests/test_codegen.py tests/test_coverage_gate.py
+
   lint:
     name: Clang-Tidy
     runs-on: macos-latest
@@ -86,3 +91,31 @@ jobs:
           find engine/ -name '*.cpp' -not -path 'engine/script/*' \
             | xargs "$CLANG_TIDY" -p builddir \
               --extra-arg="-isysroot${SDK_PATH}"
+
+  coverage:
+    name: Coverage Gate
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install meson ninja
+
+      - name: Install Python coverage dependencies
+        run: python3 -m pip install -r scripts/requirements-coverage.txt
+
+      - name: Setup wgpu-native
+        run: bash scripts/setup-wgpu.sh
+
+      - name: Setup Dear ImGui
+        run: bash scripts/setup-imgui.sh
+
+      - name: Setup V8
+        run: bash scripts/setup-v8.sh
+
+      - name: Enforce coverage threshold
+        run: |
+          python3 scripts/check_coverage.py \
+            --builddir builddir-coverage \
+            --summary-out builddir-coverage/coverage-summary.json \
+            --fail-under-file scripts/coverage-threshold.json

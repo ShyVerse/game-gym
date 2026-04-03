@@ -61,6 +61,16 @@ The minimal Unity-style boot flow is file-based:
 - `assets/models/*.gltf` or `.glb` provide renderable geometry
 - `assets/scripts/*.ts` are compiled and loaded on startup when referenced by the scene
 
+## Coverage Gate
+
+Coverage is enforced on every push and in GitHub Actions.
+
+- Threshold file: `scripts/coverage-threshold.json`
+- Local hook installer: `bash scripts/install-git-hooks.sh`
+- Manual run: `python3 scripts/check_coverage.py --builddir builddir-coverage --summary-out builddir-coverage/coverage-summary.json`
+
+The coverage gate uses a separate `builddir-coverage` build with Meson's `b_coverage=true` option and evaluates total line coverage with `gcovr`.
+
 Sample files included in the repo:
 
 - `project.ggym`
