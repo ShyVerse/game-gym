@@ -38,3 +38,20 @@ TEST(Mat4Test, LookAtFromZAxis) {
     auto v = gg::Mat4::look_at(eye, target, up);
     EXPECT_NEAR(v.data[14], -5.0f, 1e-5f);
 }
+
+TEST(Mat4Test, TranslationPlacesOffsetInLastColumn) {
+    gg::Vec3 offset{1.0f, 2.0f, 3.0f};
+    auto m = gg::Mat4::translation(offset);
+    EXPECT_FLOAT_EQ(m.data[12], 1.0f);
+    EXPECT_FLOAT_EQ(m.data[13], 2.0f);
+    EXPECT_FLOAT_EQ(m.data[14], 3.0f);
+}
+
+TEST(Mat4Test, FromTransformAppliesTranslation) {
+    gg::Transform t{};
+    t.position = {4.0f, 5.0f, 6.0f};
+    auto m = gg::Mat4::from_transform(t);
+    EXPECT_FLOAT_EQ(m.data[12], 4.0f);
+    EXPECT_FLOAT_EQ(m.data[13], 5.0f);
+    EXPECT_FLOAT_EQ(m.data[14], 6.0f);
+}
