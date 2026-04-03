@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace gg {
@@ -74,6 +75,7 @@ private:
     std::unique_ptr<Camera> camera_;
     std::unique_ptr<MeshRenderer> mesh_renderer_;
     std::vector<std::unique_ptr<Mesh>> meshes_;
+    std::unordered_map<std::string, std::vector<std::unique_ptr<Mesh>>> mesh_assets_;
     std::string active_project_path_;
     std::string active_scene_path_;
     std::string boot_status_text_;
