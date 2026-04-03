@@ -2,7 +2,7 @@ flecs_dep = dependency('flecs', fallback: ['flecs', 'flecs_dep'], required: true
 jolt_dep = dependency('Jolt', fallback: ['jolt', 'Jolt_dep'], required: true)
 nlohmann_json_dep = dependency('nlohmann_json', fallback: ['nlohmann_json', 'nlohmann_json_dep'], required: true)
 python3 = find_program('python3', 'python', required: true)
-version_header = configure_file(
+version_header = custom_target('build_version_header',
   output: 'build_version.h',
   command: [
     python3,
@@ -11,6 +11,9 @@ version_header = configure_file(
     '--base-version', meson.project_version(),
     '--header-output', '@OUTPUT@',
   ],
+  build_always_stale: true,
+  build_by_default: true,
+  depend_files: [meson.project_source_root() / 'scripts' / 'versioning.py'],
 )
 
 engine_sources = files(

@@ -10,7 +10,6 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 
 
-SEMVER_TAG_RE = re.compile(r"^(v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+))$")
 DESCRIBE_RE = re.compile(
     r"^(?P<tag>v\d+\.\d+\.\d+)"
     r"(?:-(?P<distance>\d+)-g(?P<sha>[0-9a-f]+))?"
@@ -61,6 +60,13 @@ def git_describe(repo_root: str) -> str:
     return result.stdout.strip()
 
 
+def write_if_changed(path: Path, content: str) -> bool:
+    if path.exists() and path.read_text() == content:
+        return False
+    path.write_text(content)
+    return True
+
+
 def resolve_version_info(describe: str, base_version: str) -> VersionInfo:
     describe = describe.strip()
     match = DESCRIBE_RE.match(describe)
@@ -109,6 +115,23 @@ def resolve_version_info(describe: str, base_version: str) -> VersionInfo:
     )
 
 
+def resolve_current_version_info(repo_root: str, base_version: str) -> VersionInfo:
+    try:
+        describe = git_describe(repo_root)
+    except RuntimeError:
+        return VersionInfo(
+            project_version=base_version,
+            release_tag=f"v{base_version}",
+            release_version=base_version,
+            describe=f"v{base_version}",
+            display_version=base_version,
+            is_exact_tag=False,
+            is_dirty=False,
+        )
+
+    return resolve_version_info(describe, base_version)
+
+
 def render_header(info: VersionInfo) -> str:
     return "\n".join(
         [
@@ -130,14 +153,16 @@ def render_header(info: VersionInfo) -> str:
 
 def main() -> int:
     args = parse_args()
-    describe = args.describe or git_describe(args.repo_root)
-    info = resolve_version_info(describe, args.base_version)
+    if args.describe:
+        info = resolve_version_info(args.describe, args.base_version)
+    else:
+        info = resolve_current_version_info(args.repo_root, args.base_version)
 
     if args.require_exact_tag and not info.is_exact_tag:
-        raise SystemExit(f"Tag release requires an exact semantic tag, got: {describe}")
+        raise SystemExit(f"Tag release requires an exact semantic tag, got: {info.describe}")
 
     if args.header_output:
-        Path(args.header_output).write_text(render_header(info))
+        write_if_changed(Path(args.header_output), render_header(info))
 
     if args.json:
         print(json.dumps(asdict(info), indent=2))
