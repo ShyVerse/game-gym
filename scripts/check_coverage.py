@@ -37,6 +37,11 @@ def run(cmd: list[str], cwd: Path) -> None:
     subprocess.run(cmd, cwd=cwd, check=True)
 
 
+def clear_coverage_artifacts(builddir_path: Path) -> None:
+    for gcda_file in builddir_path.rglob("*.gcda"):
+        gcda_file.unlink()
+
+
 def resolve_threshold(args: argparse.Namespace) -> float:
     if args.fail_under is not None:
         return args.fail_under
@@ -89,6 +94,7 @@ def ensure_builddir(repo_root: Path, builddir: str, enable_scripts: bool) -> Non
 def collect_summary(args: argparse.Namespace, repo_root: Path) -> Path:
     ensure_gcovr_available()
     ensure_builddir(repo_root, args.builddir, args.enable_scripts)
+    clear_coverage_artifacts(repo_root / args.builddir)
 
     if not args.skip_build:
         run(["meson", "compile", "-C", args.builddir], repo_root)

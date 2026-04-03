@@ -1,4 +1,5 @@
 import json
+import importlib.util
 import subprocess
 import sys
 from pathlib import Path
@@ -6,6 +7,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "check_coverage.py"
+SPEC = importlib.util.spec_from_file_location("check_coverage", SCRIPT)
+MODULE = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader is not None
+SPEC.loader.exec_module(MODULE)
 
 
 def write_summary(path: Path, line_percent: float) -> None:
@@ -81,3 +86,18 @@ def test_reads_threshold_from_file(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "61.0%" in result.stderr
+
+
+def test_clear_coverage_artifacts_removes_gcda_files(tmp_path: Path) -> None:
+    builddir = tmp_path / "builddir-coverage"
+    nested = builddir / "engine"
+    nested.mkdir(parents=True)
+    keep = nested / "file.gcno"
+    remove = nested / "file.gcda"
+    keep.write_text("gcno")
+    remove.write_text("gcda")
+
+    MODULE.clear_coverage_artifacts(builddir)
+
+    assert keep.exists()
+    assert not remove.exists()
