@@ -1,4 +1,5 @@
 #include "core/engine.h"
+#include "version/version_info.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -13,7 +14,14 @@ int main(int argc, char* argv[]) {
     std::string startup_scene_override;
 
     for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == "--model" && i + 1 < argc) {
+        if (std::string(argv[i]) == "--version") {
+            std::printf("game-gym %.*s (%.*s)\n",
+                        int(gg::build_version::display_version().size()),
+                        gg::build_version::display_version().data(),
+                        int(gg::build_version::git_describe().size()),
+                        gg::build_version::git_describe().data());
+            return EXIT_SUCCESS;
+        } else if (std::string(argv[i]) == "--model" && i + 1 < argc) {
             model_path = argv[++i];
         } else if (std::string(argv[i]) == "--project" && i + 1 < argc) {
             project_file = argv[++i];

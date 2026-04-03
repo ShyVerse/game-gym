@@ -61,10 +61,10 @@ jobs:
       - name: Check generated files are up to date
         run: python scripts/codegen.py --check
 
-      - name: Coverage Helper Tests
+      - name: Python Helper Tests
         run: |
           python -m pip install pytest -r scripts/requirements-coverage.txt
-          pytest -q tests/test_codegen.py tests/test_coverage_gate.py tests/test_coverage_comment.py
+          pytest -q tests/test_codegen.py tests/test_coverage_gate.py tests/test_coverage_comment.py tests/test_versioning.py
 
   lint:
     name: Clang-Tidy

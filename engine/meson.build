@@ -1,6 +1,17 @@
 flecs_dep = dependency('flecs', fallback: ['flecs', 'flecs_dep'], required: true)
 jolt_dep = dependency('Jolt', fallback: ['jolt', 'Jolt_dep'], required: true)
 nlohmann_json_dep = dependency('nlohmann_json', fallback: ['nlohmann_json', 'nlohmann_json_dep'], required: true)
+python3 = find_program('python3', 'python', required: true)
+version_header = configure_file(
+  output: 'build_version.h',
+  command: [
+    python3,
+    meson.project_source_root() / 'scripts' / 'versioning.py',
+    '--repo-root', meson.project_source_root(),
+    '--base-version', meson.project_version(),
+    '--header-output', '@OUTPUT@',
+  ],
+)
 
 engine_sources = files(
   'assets/asset_paths.cpp',
@@ -22,11 +33,13 @@ engine_sources = files(
   'renderer/mesh.cpp',
   'renderer/gltf_loader.cpp',
   'renderer/mesh_renderer.cpp',
+  'version/version_info.h',
   'editor/editor_ui.cpp',
   'mcp/mcp_server.cpp',
   'mcp/mcp_tools.cpp',
   'mcp/mcp_stdio_transport.cpp',
 )
+engine_sources += version_header
 
 engine_inc = include_directories('.')
 

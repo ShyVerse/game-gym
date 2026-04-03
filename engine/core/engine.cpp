@@ -16,6 +16,7 @@
 #include "renderer/mesh_renderer.h"
 #include "renderer/renderer.h"
 #include "scene/scene_loader.h"
+#include "version/version_info.h"
 
 #ifdef GG_ENABLE_SCRIPTS
 #include "script/script_bindings.h"
@@ -163,7 +164,8 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
     }
 
     if (config.enable_mcp) {
-        engine->mcp_ = McpServer::create("game-gym-engine", "1.0.0");
+        engine->mcp_ =
+            McpServer::create("game-gym-engine", std::string(build_version::display_version()));
         register_mcp_tools(*engine->mcp_, *engine->world_, *engine->physics_);
         engine->mcp_transport_ = McpStdioTransport::create();
         engine->mcp_transport_->start();
