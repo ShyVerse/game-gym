@@ -84,6 +84,9 @@ jobs:
       - name: Configure
         run: meson setup builddir
 
+      - name: Generate version header
+        run: ninja -C builddir engine/build_version.h
+
       - name: Run clang-tidy
         run: |
           CLANG_TIDY="$(brew --prefix llvm@18)/bin/clang-tidy"
