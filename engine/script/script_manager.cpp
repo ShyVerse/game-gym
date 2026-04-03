@@ -4,10 +4,12 @@
 #include "script/script_engine.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <future>
 #include <set>
 #include <sstream>
 #include <vector>
@@ -21,10 +23,16 @@ namespace gg {
 // ---------------------------------------------------------------------------
 
 struct ScriptManager::Impl {
+    struct PendingCompile {
+        std::string source_path;
+        std::future<std::string> future;
+    };
+
     ScriptEngine& engine;
     std::string script_dir;
     std::unique_ptr<FileWatcher> watcher;
     std::set<std::string> loaded_scripts;
+    std::vector<PendingCompile> pending_compiles;
 
     Impl(ScriptEngine& e, std::string dir) : engine(e), script_dir(std::move(dir)) {}
 
@@ -177,6 +185,38 @@ struct ScriptManager::Impl {
         capture_lifecycle(load_path);
         call_script_lifecycle(load_path, "onInit");
     }
+
+    void enqueue_compile(const std::string& source_path) {
+        const bool already_pending = std::any_of(
+            pending_compiles.begin(), pending_compiles.end(), [&](const PendingCompile& pending) {
+                return pending.source_path == source_path;
+            });
+        if (already_pending) {
+            return;
+        }
+
+        pending_compiles.push_back(
+            {.source_path = source_path, .future = std::async(std::launch::async, [source_path] {
+                                             return compile_typescript(source_path);
+                                         })});
+    }
+
+    void drain_completed_compiles(ScriptManager& manager) {
+        auto it = pending_compiles.begin();
+        while (it != pending_compiles.end()) {
+            const auto status = it->future.wait_for(std::chrono::milliseconds(0));
+            if (status != std::future_status::ready) {
+                ++it;
+                continue;
+            }
+
+            const std::string js_path = it->future.get();
+            if (!js_path.empty()) {
+                manager.reload(js_path);
+            }
+            it = pending_compiles.erase(it);
+        }
+    }
 };
 
 // ---------------------------------------------------------------------------
@@ -241,6 +281,7 @@ void ScriptManager::poll_changes() {
         return;
     }
 
+    impl_->drain_completed_compiles(*this);
     auto changed = impl_->watcher->poll_changes();
 
     for (const auto& path : changed) {
@@ -248,10 +289,7 @@ void ScriptManager::poll_changes() {
         auto ext = file_path.extension().string();
 
         if (ext == ".ts") {
-            std::string js_path = Impl::compile_typescript(path);
-            if (!js_path.empty()) {
-                reload(js_path);
-            }
+            impl_->enqueue_compile(path);
         } else if (ext == ".js") {
             reload(path);
         }

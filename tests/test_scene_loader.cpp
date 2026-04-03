@@ -110,3 +110,28 @@ TEST(SceneLoaderTest, MissingMeshFileStillCreatesEntity) {
     EXPECT_TRUE(found);
     fs::remove_all(root);
 }
+
+TEST(SceneLoaderTest, CollectsAllUniqueMeshAssetsFromScene) {
+    const auto root = fs::temp_directory_path() / "gg_scene_loader_multi_mesh";
+    fs::remove_all(root);
+    fs::create_directories(root / "scenes");
+
+    {
+        std::ofstream file(root / "scenes/start.scene.json");
+        file << R"({
+  "entities": [
+    { "name": "crate_a", "mesh_asset": "assets/models/a.glb" },
+    { "name": "crate_b", "mesh_asset": "assets/models/b.glb" },
+    { "name": "crate_c", "mesh_asset": "assets/models/a.glb" }
+  ]
+})";
+    }
+
+    auto world = gg::World::create();
+    auto result =
+        gg::load_scene_into_world((root / "scenes/start.scene.json").string(), root, *world);
+    ASSERT_TRUE(result.ok) << result.error;
+    EXPECT_EQ(result.mesh_assets.size(), 2u);
+
+    fs::remove_all(root);
+}

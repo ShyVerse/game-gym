@@ -32,6 +32,55 @@ struct Mat4 {
         return m;
     }
 
+    static Mat4 translation(const Vec3& offset) {
+        Mat4 m = identity();
+        m.data[12] = offset.x;
+        m.data[13] = offset.y;
+        m.data[14] = offset.z;
+        return m;
+    }
+
+    static Mat4 scale(const Vec3& scale) {
+        Mat4 m = identity();
+        m.data[0] = scale.x;
+        m.data[5] = scale.y;
+        m.data[10] = scale.z;
+        return m;
+    }
+
+    static Mat4 rotation(const Quat& q) {
+        Mat4 m = identity();
+
+        const float xx = q.x * q.x;
+        const float yy = q.y * q.y;
+        const float zz = q.z * q.z;
+        const float xy = q.x * q.y;
+        const float xz = q.x * q.z;
+        const float yz = q.y * q.z;
+        const float wx = q.w * q.x;
+        const float wy = q.w * q.y;
+        const float wz = q.w * q.z;
+
+        m.data[0] = 1.0f - 2.0f * (yy + zz);
+        m.data[1] = 2.0f * (xy + wz);
+        m.data[2] = 2.0f * (xz - wy);
+
+        m.data[4] = 2.0f * (xy - wz);
+        m.data[5] = 1.0f - 2.0f * (xx + zz);
+        m.data[6] = 2.0f * (yz + wx);
+
+        m.data[8] = 2.0f * (xz + wy);
+        m.data[9] = 2.0f * (yz - wx);
+        m.data[10] = 1.0f - 2.0f * (xx + yy);
+
+        return m;
+    }
+
+    static Mat4 from_transform(const Transform& transform) {
+        return translation(transform.position) * rotation(transform.rotation) *
+               scale(transform.scale);
+    }
+
     static Mat4 look_at(const Vec3& eye, const Vec3& target, const Vec3& up) {
         float fx = target.x - eye.x;
         float fy = target.y - eye.y;

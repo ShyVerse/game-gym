@@ -28,6 +28,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 namespace gg {
@@ -132,8 +133,14 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         startup_script_paths = std::move(scene_summary.script_assets);
 
         if (!scene_summary.mesh_assets.empty()) {
-            engine->meshes_ = GltfLoader::load(scene_summary.mesh_assets.front(), *engine->gpu_);
-            if (!engine->meshes_.empty()) {
+            for (const auto& mesh_asset_path : scene_summary.mesh_assets) {
+                auto meshes = GltfLoader::load(mesh_asset_path, *engine->gpu_);
+                if (!meshes.empty()) {
+                    engine->mesh_assets_.emplace(mesh_asset_path, std::move(meshes));
+                }
+            }
+
+            if (!engine->mesh_assets_.empty()) {
                 engine->mesh_renderer_ = MeshRenderer::create(*engine->gpu_);
                 engine->camera_ = Camera::create();
                 engine->camera_->set_aspect(float(config.width) / float(config.height));
@@ -185,7 +192,7 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         if (engine->script_manager_) {
             if (!startup_script_paths.empty()) {
                 engine->script_manager_->load_paths(startup_script_paths);
-            } else {
+            } else if (!has_project_config) {
                 engine->script_manager_->load_all();
             }
         }
@@ -268,10 +275,25 @@ void Engine::run() {
         }
 
         if (renderer_->begin_frame()) {
-            if (mesh_renderer_ && camera_ && !meshes_.empty()) {
+            if (mesh_renderer_ && camera_ && !mesh_assets_.empty()) {
+                mesh_renderer_->update_camera(*camera_);
+                world_->raw().each([&](flecs::entity entity,
+                                       const Transform& transform,
+                                       const Renderable& renderable) {
+                    auto it = mesh_assets_.find(renderable.mesh_asset_path);
+                    if (it == mesh_assets_.end()) {
+                        return;
+                    }
+
+                    const Mat4 model_matrix = Mat4::from_transform(transform);
+                    for (const auto& mesh : it->second) {
+                        mesh_renderer_->draw(*mesh, model_matrix, renderer_->render_pass());
+                    }
+                });
+            } else if (mesh_renderer_ && camera_ && !meshes_.empty()) {
                 mesh_renderer_->update_camera(*camera_);
                 for (const auto& mesh : meshes_) {
-                    mesh_renderer_->draw(*mesh, renderer_->render_pass());
+                    mesh_renderer_->draw(*mesh, Mat4::identity(), renderer_->render_pass());
                 }
             } else {
                 renderer_->draw_triangle();

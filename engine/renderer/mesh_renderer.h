@@ -1,4 +1,6 @@
 #pragma once
+#include "math/mat4.h"
+
 #include <cstdint>
 #include <memory>
 #include <webgpu/webgpu.h>
@@ -18,7 +20,7 @@ public:
     MeshRenderer& operator=(MeshRenderer&&) = delete;
 
     void update_camera(const Camera& camera);
-    void draw(const Mesh& mesh, WGPURenderPassEncoder pass);
+    void draw(const Mesh& mesh, const Mat4& model_matrix, WGPURenderPassEncoder pass);
     [[nodiscard]] WGPUTextureView depth_view() const { return depth_view_; }
     void resize_depth(uint32_t width, uint32_t height);
 
@@ -30,5 +32,6 @@ private:
     WGPUBindGroup bind_group_ = nullptr;
     WGPUTexture depth_texture_ = nullptr;
     WGPUTextureView depth_view_ = nullptr;
+    Mat4 view_projection_ = Mat4::identity();
 };
 } // namespace gg
