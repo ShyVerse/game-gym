@@ -51,22 +51,22 @@ ProjectConfigLoadResult load_project_config(const std::string& path) {
     config.project_root = project_file.parent_path();
     config.name = doc.value("name", project_file.stem().string());
 
-    auto startup_scene = resolve_project_path(config.project_root,
-                                              doc["startup_scene"].get<std::string>());
+    auto startup_scene =
+        resolve_project_path(config.project_root, doc["startup_scene"].get<std::string>());
     if (!startup_scene.ok) {
         return {.ok = false, .error = startup_scene.error};
     }
     config.startup_scene = startup_scene.path;
 
-    auto assets_dir = resolve_project_path(config.project_root,
-                                           doc.value("assets_dir", std::string("assets")));
+    auto assets_dir =
+        resolve_project_path(config.project_root, doc.value("assets_dir", std::string("assets")));
     if (!assets_dir.ok) {
         return {.ok = false, .error = assets_dir.error};
     }
     config.assets_dir = assets_dir.path;
 
-    auto scripts_dir = resolve_project_path(config.project_root,
-                                            doc.value("scripts_dir", std::string("assets/scripts")));
+    auto scripts_dir = resolve_project_path(
+        config.project_root, doc.value("scripts_dir", std::string("assets/scripts")));
     if (!scripts_dir.ok) {
         return {.ok = false, .error = scripts_dir.error};
     }

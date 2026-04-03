@@ -73,7 +73,8 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         }
     }
 
-    if (has_project_config && !config.startup_scene_override.empty() && !config.project_file.empty()) {
+    if (has_project_config && !config.startup_scene_override.empty() &&
+        !config.project_file.empty()) {
         auto startup_scene =
             resolve_project_path(project_config.project_root, config.startup_scene_override);
         if (!startup_scene.ok) {
@@ -119,9 +120,8 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
                                            : project_config.project_file.string();
         engine->active_scene_path_ = project_config.startup_scene.string();
 
-        auto scene_summary = load_scene_into_world(project_config.startup_scene.string(),
-                                                   project_config.project_root,
-                                                   *engine->world_);
+        auto scene_summary = load_scene_into_world(
+            project_config.startup_scene.string(), project_config.project_root, *engine->world_);
         if (!scene_summary.ok) {
             throw std::runtime_error(scene_summary.error);
         }

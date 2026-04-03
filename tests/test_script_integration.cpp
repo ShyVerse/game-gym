@@ -5,9 +5,9 @@
 #include "script/script_engine.h"
 #include "script/script_manager.h"
 
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <cstdlib>
 #include <gtest/gtest.h>
 
 namespace fs = std::filesystem;

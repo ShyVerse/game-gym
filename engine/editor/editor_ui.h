@@ -21,10 +21,10 @@ struct EditorSessionInfo {
 
 class EditorUI {
 public:
-    static std::unique_ptr<EditorUI> create(GLFWwindow* window,
-                                            GpuContext& gpu,
-                                            WGPUTextureFormat depth_format =
-                                                WGPUTextureFormat_Undefined);
+    static std::unique_ptr<EditorUI>
+    create(GLFWwindow* window,
+           GpuContext& gpu,
+           WGPUTextureFormat depth_format = WGPUTextureFormat_Undefined);
     ~EditorUI();
     EditorUI(const EditorUI&) = delete;
     EditorUI& operator=(const EditorUI&) = delete;

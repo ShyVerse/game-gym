@@ -20,9 +20,8 @@ namespace gg {
 // Factory
 // ---------------------------------------------------------------------------
 
-std::unique_ptr<EditorUI> EditorUI::create(GLFWwindow* window,
-                                           GpuContext& gpu,
-                                           WGPUTextureFormat depth_format) {
+std::unique_ptr<EditorUI>
+EditorUI::create(GLFWwindow* window, GpuContext& gpu, WGPUTextureFormat depth_format) {
     auto editor = std::unique_ptr<EditorUI>(new EditorUI());
 
     IMGUI_CHECKVERSION();
