@@ -5,6 +5,15 @@
 namespace gg {
 namespace {
 
+std::filesystem::path canonical_or_normal(const std::filesystem::path& path) {
+    std::error_code ec;
+    const auto canonical = std::filesystem::weakly_canonical(path, ec);
+    if (!ec) {
+        return canonical;
+    }
+    return std::filesystem::absolute(path).lexically_normal();
+}
+
 bool is_within_root(const std::filesystem::path& root, const std::filesystem::path& candidate) {
     auto root_it = root.begin();
     auto candidate_it = candidate.begin();
@@ -26,9 +35,9 @@ PathResolveResult resolve_project_path(const std::filesystem::path& project_root
         return {.ok = false, .error = "path must not be empty"};
     }
 
-    const auto root = std::filesystem::absolute(project_root).lexically_normal();
+    const auto root = canonical_or_normal(project_root);
     auto candidate = raw_path.is_absolute() ? raw_path : (root / raw_path);
-    candidate = std::filesystem::absolute(candidate).lexically_normal();
+    candidate = canonical_or_normal(candidate);
 
     if (!is_within_root(root, candidate)) {
         return {.ok = false, .error = "path escapes project root: " + raw_path.string()};

@@ -51,22 +51,40 @@ ProjectConfigLoadResult load_project_config(const std::string& path) {
     config.project_root = project_file.parent_path();
     config.name = doc.value("name", project_file.stem().string());
 
-    auto startup_scene =
-        resolve_project_path(config.project_root, doc["startup_scene"].get<std::string>());
+    std::string startup_scene_value;
+    try {
+        startup_scene_value = doc.at("startup_scene").get<std::string>();
+    } catch (const std::exception& e) {
+        return {.ok = false, .error = std::string("invalid startup_scene: ") + e.what()};
+    }
+
+    auto startup_scene = resolve_project_path(config.project_root, startup_scene_value);
     if (!startup_scene.ok) {
         return {.ok = false, .error = startup_scene.error};
     }
     config.startup_scene = startup_scene.path;
 
-    auto assets_dir =
-        resolve_project_path(config.project_root, doc.value("assets_dir", std::string("assets")));
+    std::string assets_dir_value = "assets";
+    try {
+        assets_dir_value = doc.value("assets_dir", std::string("assets"));
+    } catch (const std::exception& e) {
+        return {.ok = false, .error = std::string("invalid assets_dir: ") + e.what()};
+    }
+
+    auto assets_dir = resolve_project_path(config.project_root, assets_dir_value);
     if (!assets_dir.ok) {
         return {.ok = false, .error = assets_dir.error};
     }
     config.assets_dir = assets_dir.path;
 
-    auto scripts_dir = resolve_project_path(
-        config.project_root, doc.value("scripts_dir", std::string("assets/scripts")));
+    std::string scripts_dir_value = "assets/scripts";
+    try {
+        scripts_dir_value = doc.value("scripts_dir", std::string("assets/scripts"));
+    } catch (const std::exception& e) {
+        return {.ok = false, .error = std::string("invalid scripts_dir: ") + e.what()};
+    }
+
+    auto scripts_dir = resolve_project_path(config.project_root, scripts_dir_value);
     if (!scripts_dir.ok) {
         return {.ok = false, .error = scripts_dir.error};
     }

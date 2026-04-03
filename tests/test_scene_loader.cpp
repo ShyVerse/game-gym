@@ -7,6 +7,18 @@
 #include <gtest/gtest.h>
 
 namespace fs = std::filesystem;
+namespace {
+
+fs::path canonical_or_normal_for_test(const fs::path& path) {
+    std::error_code ec;
+    const auto canonical = fs::weakly_canonical(path, ec);
+    if (!ec) {
+        return canonical;
+    }
+    return fs::absolute(path).lexically_normal();
+}
+
+} // namespace
 
 TEST(SceneLoaderTest, LoadsEntitiesIntoWorld) {
     const auto root = fs::temp_directory_path() / "gg_scene_loader";
@@ -53,12 +65,12 @@ TEST(SceneLoaderTest, LoadsEntitiesIntoWorld) {
         const auto* renderable = entity.get<gg::Renderable>();
         ASSERT_NE(renderable, nullptr);
         EXPECT_EQ(renderable->mesh_asset_path,
-                  (fs::absolute(root) / "assets/models/crate.glb").lexically_normal().string());
+                  canonical_or_normal_for_test(root / "assets/models/crate.glb").string());
 
         const auto* script = entity.get<gg::ScriptComponent>();
         ASSERT_NE(script, nullptr);
         EXPECT_EQ(script->script_asset_path,
-                  (fs::absolute(root) / "assets/scripts/crate.ts").lexically_normal().string());
+                  canonical_or_normal_for_test(root / "assets/scripts/crate.ts").string());
     });
 
     EXPECT_TRUE(found);

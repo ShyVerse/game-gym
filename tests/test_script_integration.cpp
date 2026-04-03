@@ -176,3 +176,21 @@ TEST_F(ScriptIntegrationTest, LoadPathsCompilesAndRunsTypeScriptOnStartup) {
 
     EXPECT_TRUE(found);
 }
+
+TEST_F(ScriptIntegrationTest, LoadPathsDoesNotFallbackToDirectoryScriptsWhenEmpty) {
+    write_js("ambient.js",
+             "function onInit() {\n"
+             "    world.createEntity('ambient_script_entity');\n"
+             "}\n");
+
+    manager_->load_paths({});
+
+    bool found = false;
+    world_->raw().each([&](flecs::entity, const gg::Name& n) {
+        if (n.value == "ambient_script_entity") {
+            found = true;
+        }
+    });
+
+    EXPECT_FALSE(found);
+}
