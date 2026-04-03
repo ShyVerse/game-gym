@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <cstdlib>
 #include <gtest/gtest.h>
 
 namespace fs = std::filesystem;
@@ -151,4 +152,27 @@ TEST_F(ScriptIntegrationTest, MultipleScriptsLoadInOrder) {
     auto result = engine_->execute("globalThis.__order");
     ASSERT_TRUE(result.ok) << result.error;
     EXPECT_EQ(result.value, "AB");
+}
+
+TEST_F(ScriptIntegrationTest, LoadPathsCompilesAndRunsTypeScriptOnStartup) {
+    if (std::system("command -v npx >/dev/null 2>&1") != 0) {
+        GTEST_SKIP() << "npx is not available in this environment";
+    }
+
+    write_js("boot.ts",
+             "declare const world: { createEntity(name: string): unknown; };\n"
+             "function onInit() {\n"
+             "    world.createEntity('ts_boot_marker');\n"
+             "}\n");
+
+    manager_->load_paths({(tmp_dir_ / "boot.ts").string()});
+
+    bool found = false;
+    world_->raw().each([&](flecs::entity, const gg::Name& n) {
+        if (n.value == "ts_boot_marker") {
+            found = true;
+        }
+    });
+
+    EXPECT_TRUE(found);
 }

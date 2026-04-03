@@ -9,6 +9,7 @@ bash scripts/setup-imgui.sh
 meson setup builddir
 meson compile -C builddir
 meson test -C builddir
+./builddir/app/game-gym
 ```
 
 ### Optional: V8 Scripting
@@ -46,6 +47,7 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `style`
 - Framework: Google Test
 - Every module has a corresponding `tests/test_<module>.cpp`
 - Run specific test: `meson test -C builddir <test_name> -v`
+- Default boot path: `./builddir/app/game-gym` loads `project.ggym` from the repo root
 
 ## Adding Scriptable Types
 

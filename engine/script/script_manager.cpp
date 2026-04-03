@@ -56,7 +56,7 @@ struct ScriptManager::Impl {
 
     static std::string compile_typescript(const std::string& ts_path) {
         std::ostringstream cmd;
-        cmd << "npx tsc --strict --noImplicitAny --target ES2020"
+        cmd << "npx --yes -p typescript tsc --strict --noImplicitAny --pretty false --target ES2020"
             << " --module ES2020 " << shell_escape(ts_path) << " 2>&1";
         int rc = std::system(cmd.str().c_str());
         if (rc != 0) {
@@ -66,6 +66,18 @@ struct ScriptManager::Impl {
         js_path.replace_extension(".js");
         if (fs::exists(js_path)) {
             return js_path.string();
+        }
+        return {};
+    }
+
+    static std::string resolve_load_path(const std::string& path) {
+        fs::path file_path(path);
+        const auto ext = file_path.extension().string();
+        if (ext == ".ts") {
+            return compile_typescript(path);
+        }
+        if (ext == ".js") {
+            return path;
         }
         return {};
     }
@@ -144,6 +156,27 @@ struct ScriptManager::Impl {
                            "\"];",
                        "<remove:" + path + ">");
     }
+
+    void load_script_file(const std::string& source_path) {
+        const std::string load_path = resolve_load_path(source_path);
+        if (load_path.empty()) {
+            return;
+        }
+
+        std::string source = read_file(load_path);
+        if (source.empty()) {
+            return;
+        }
+
+        auto result = engine.execute(source, load_path);
+        if (!result.ok) {
+            return;
+        }
+
+        loaded_scripts.insert(load_path);
+        capture_lifecycle(load_path);
+        call_script_lifecycle(load_path, "onInit");
+    }
 };
 
 // ---------------------------------------------------------------------------
@@ -171,28 +204,31 @@ void ScriptManager::load_all() {
         return;
     }
 
-    std::vector<std::string> js_files;
+    std::vector<std::string> script_files;
     for (const auto& entry : fs::directory_iterator(impl_->script_dir)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".js") {
-            js_files.push_back(entry.path().string());
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+
+        const auto ext = entry.path().extension().string();
+        if (ext == ".js" || ext == ".ts") {
+            script_files.push_back(entry.path().string());
         }
     }
-    std::sort(js_files.begin(), js_files.end());
+    std::sort(script_files.begin(), script_files.end());
 
-    for (const auto& path : js_files) {
-        std::string source = Impl::read_file(path);
-        if (source.empty()) {
-            continue;
-        }
+    for (const auto& path : script_files) {
+        impl_->load_script_file(path);
+    }
+}
 
-        auto result = impl_->engine.execute(source, path);
-        if (!result.ok) {
-            continue;
-        }
+void ScriptManager::load_paths(const std::vector<std::string>& paths) {
+    std::vector<std::string> unique_paths = paths;
+    std::sort(unique_paths.begin(), unique_paths.end());
+    unique_paths.erase(std::unique(unique_paths.begin(), unique_paths.end()), unique_paths.end());
 
-        impl_->loaded_scripts.insert(path);
-        impl_->capture_lifecycle(path);
-        impl_->call_script_lifecycle(path, "onInit");
+    for (const auto& path : unique_paths) {
+        impl_->load_script_file(path);
     }
 }
 
@@ -227,25 +263,30 @@ void ScriptManager::poll_changes() {
 // ---------------------------------------------------------------------------
 
 void ScriptManager::reload(const std::string& path) {
-    if (impl_->loaded_scripts.count(path) > 0) {
-        impl_->call_script_lifecycle(path, "onDestroy");
-        impl_->remove_script_entry(path);
-        impl_->loaded_scripts.erase(path);
+    const std::string load_path = Impl::resolve_load_path(path);
+    if (load_path.empty()) {
+        return;
     }
 
-    std::string source = Impl::read_file(path);
+    if (impl_->loaded_scripts.count(load_path) > 0) {
+        impl_->call_script_lifecycle(load_path, "onDestroy");
+        impl_->remove_script_entry(load_path);
+        impl_->loaded_scripts.erase(load_path);
+    }
+
+    std::string source = Impl::read_file(load_path);
     if (source.empty()) {
         return;
     }
 
-    auto result = impl_->engine.execute(source, path);
+    auto result = impl_->engine.execute(source, load_path);
     if (!result.ok) {
         return;
     }
 
-    impl_->loaded_scripts.insert(path);
-    impl_->capture_lifecycle(path);
-    impl_->call_script_lifecycle(path, "onInit");
+    impl_->loaded_scripts.insert(load_path);
+    impl_->capture_lifecycle(load_path);
+    impl_->call_script_lifecycle(load_path, "onInit");
 }
 
 // ---------------------------------------------------------------------------

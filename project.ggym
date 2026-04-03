@@ -1,0 +1,6 @@
+{
+  "name": "game-gym",
+  "startup_scene": "scenes/start.scene.json",
+  "assets_dir": "assets",
+  "scripts_dir": "assets/scripts"
+}

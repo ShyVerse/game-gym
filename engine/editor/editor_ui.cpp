@@ -20,7 +20,9 @@ namespace gg {
 // Factory
 // ---------------------------------------------------------------------------
 
-std::unique_ptr<EditorUI> EditorUI::create(GLFWwindow* window, GpuContext& gpu) {
+std::unique_ptr<EditorUI> EditorUI::create(GLFWwindow* window,
+                                           GpuContext& gpu,
+                                           WGPUTextureFormat depth_format) {
     auto editor = std::unique_ptr<EditorUI>(new EditorUI());
 
     IMGUI_CHECKVERSION();
@@ -39,7 +41,7 @@ std::unique_ptr<EditorUI> EditorUI::create(GLFWwindow* window, GpuContext& gpu) 
     wgpu_info.Device = gpu.device();
     wgpu_info.NumFramesInFlight = 3;
     wgpu_info.RenderTargetFormat = gpu.surface_format();
-    wgpu_info.DepthStencilFormat = WGPUTextureFormat_Undefined;
+    wgpu_info.DepthStencilFormat = depth_format;
 
     if (!ImGui_ImplWGPU_Init(&wgpu_info)) {
         std::fprintf(stderr, "[EditorUI] ImGui_ImplWGPU_Init failed\n");
@@ -71,7 +73,9 @@ void EditorUI::begin_frame() {
     ImGui::NewFrame();
 }
 
-void EditorUI::draw_panels(World& world, PhysicsWorld& /*physics*/) {
+void EditorUI::draw_panels(World& world,
+                           PhysicsWorld& /*physics*/,
+                           const EditorSessionInfo& session) {
     if (!visible_) {
         return;
     }
@@ -143,6 +147,34 @@ void EditorUI::draw_panels(World& world, PhysicsWorld& /*physics*/) {
     ImGuiIO& io = ImGui::GetIO();
     ImGui::Text("FPS:        %.1f", io.Framerate);
     ImGui::Text("Frame time: %.3f ms", 1000.0f / io.Framerate);
+    ImGui::End();
+
+    // --- Scene panel --------------------------------------------------------
+    ImGui::Begin("Scene");
+    if (!session.project_path.empty()) {
+        ImGui::TextWrapped("Project: %s", session.project_path.c_str());
+    } else {
+        ImGui::TextDisabled("Project: none");
+    }
+
+    if (!session.scene_path.empty()) {
+        ImGui::TextWrapped("Startup scene: %s", session.scene_path.c_str());
+    } else {
+        ImGui::TextDisabled("Startup scene: none");
+    }
+
+    int entity_count = 0;
+    world.raw().each([&entity_count](flecs::entity, const Name&) { ++entity_count; });
+
+    ImGui::Separator();
+    ImGui::Text("Entities: %d", entity_count);
+    ImGui::Text("Mesh assets: %zu", session.mesh_asset_count);
+    ImGui::Text("Scripts: %zu", session.script_count);
+
+    if (!session.status_text.empty()) {
+        ImGui::Separator();
+        ImGui::TextWrapped("%s", session.status_text.c_str());
+    }
     ImGui::End();
 }
 

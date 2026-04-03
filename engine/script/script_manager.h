@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace gg {
 
@@ -19,6 +20,7 @@ public:
     ScriptManager& operator=(ScriptManager&&) = delete;
 
     void load_all();
+    void load_paths(const std::vector<std::string>& paths);
     void poll_changes();
     void reload(const std::string& path);
     void call_update(float dt);

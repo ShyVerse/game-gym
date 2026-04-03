@@ -80,6 +80,30 @@ if get_option('enable_tests')
   )
   test('gltf_loader', test_gltf_loader)
 
+  test_project_config = executable('test_project_config',
+    'test_project_config.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('project_config', test_project_config)
+
+  test_scene_serializer = executable('test_scene_serializer',
+    'test_scene_serializer.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('scene_serializer', test_scene_serializer)
+
+  test_asset_paths = executable('test_asset_paths',
+    'test_asset_paths.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('asset_paths', test_asset_paths)
+
+  test_scene_loader = executable('test_scene_loader',
+    'test_scene_loader.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('scene_loader', test_scene_loader)
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',

@@ -1,5 +1,6 @@
 #include "core/engine.h"
 
+#include "assets/asset_paths.h"
 #include "core/window.h"
 #include "ecs/world.h"
 #include "editor/editor_ui.h"
@@ -7,12 +8,14 @@
 #include "mcp/mcp_stdio_transport.h"
 #include "mcp/mcp_tools.h"
 #include "physics/physics_world.h"
+#include "project/project_config.h"
 #include "renderer/camera.h"
 #include "renderer/gltf_loader.h"
 #include "renderer/gpu_context.h"
 #include "renderer/mesh.h"
 #include "renderer/mesh_renderer.h"
 #include "renderer/renderer.h"
+#include "scene/scene_loader.h"
 
 #ifdef GG_ENABLE_SCRIPTS
 #include "script/script_bindings.h"
@@ -20,9 +23,11 @@
 #include "script/script_manager.h"
 #endif
 
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 namespace gg {
 
@@ -40,6 +45,42 @@ std::string Engine::read_file(const std::string& path) {
 
 std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
     auto engine = std::unique_ptr<Engine>(new Engine());
+    std::vector<std::string> startup_script_paths;
+    ProjectConfig project_config;
+    bool has_project_config = false;
+
+    if (config.enable_project_boot) {
+        if (!config.project_file.empty()) {
+            auto project_result = load_project_config(config.project_file);
+            if (!project_result.ok) {
+                throw std::runtime_error(project_result.error);
+            }
+            project_config = std::move(project_result.config);
+            has_project_config = true;
+        } else if (!config.startup_scene_override.empty()) {
+            project_config.name = "game-gym";
+            project_config.project_root = std::filesystem::current_path();
+            project_config.assets_dir = project_config.project_root / "assets";
+            project_config.scripts_dir = project_config.project_root / config.script_dir;
+
+            auto startup_scene =
+                resolve_project_path(project_config.project_root, config.startup_scene_override);
+            if (!startup_scene.ok) {
+                throw std::runtime_error(startup_scene.error);
+            }
+            project_config.startup_scene = startup_scene.path;
+            has_project_config = true;
+        }
+    }
+
+    if (has_project_config && !config.startup_scene_override.empty() && !config.project_file.empty()) {
+        auto startup_scene =
+            resolve_project_path(project_config.project_root, config.startup_scene_override);
+        if (!startup_scene.ok) {
+            throw std::runtime_error(startup_scene.error);
+        }
+        project_config.startup_scene = startup_scene.path;
+    }
 
     engine->window_ = Window::create({
         .title = config.title,
@@ -72,18 +113,53 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         throw std::runtime_error("Failed to create physics world");
     }
 
-    engine->editor_ = EditorUI::create(engine->window_->native_handle(), *engine->gpu_);
-    if (!engine->editor_) {
-        throw std::runtime_error("Failed to create EditorUI");
-    }
+    if (has_project_config) {
+        engine->active_project_path_ = project_config.project_file.empty()
+                                           ? project_config.project_root.string()
+                                           : project_config.project_file.string();
+        engine->active_scene_path_ = project_config.startup_scene.string();
 
-    if (!config.model_path.empty()) {
+        auto scene_summary = load_scene_into_world(project_config.startup_scene.string(),
+                                                   project_config.project_root,
+                                                   *engine->world_);
+        if (!scene_summary.ok) {
+            throw std::runtime_error(scene_summary.error);
+        }
+
+        engine->loaded_mesh_asset_count_ = scene_summary.mesh_assets.size();
+        engine->loaded_script_count_ = scene_summary.script_assets.size();
+        startup_script_paths = std::move(scene_summary.script_assets);
+
+        if (!scene_summary.mesh_assets.empty()) {
+            engine->meshes_ = GltfLoader::load(scene_summary.mesh_assets.front(), *engine->gpu_);
+            if (!engine->meshes_.empty()) {
+                engine->mesh_renderer_ = MeshRenderer::create(*engine->gpu_);
+                engine->camera_ = Camera::create();
+                engine->camera_->set_aspect(float(config.width) / float(config.height));
+                engine->boot_status_text_ = "Startup scene loaded from project file.";
+            } else {
+                engine->boot_status_text_ =
+                    "Startup scene loaded, but the first mesh asset could not be parsed.";
+            }
+        } else {
+            engine->boot_status_text_ = "Startup scene loaded. No mesh assets were attached.";
+        }
+    } else if (!config.model_path.empty()) {
         engine->meshes_ = GltfLoader::load(config.model_path, *engine->gpu_);
         if (!engine->meshes_.empty()) {
             engine->mesh_renderer_ = MeshRenderer::create(*engine->gpu_);
             engine->camera_ = Camera::create();
             engine->camera_->set_aspect(float(config.width) / float(config.height));
+            engine->boot_status_text_ = "Direct model debug boot.";
         }
+    }
+
+    const auto editor_depth_format =
+        engine->mesh_renderer_ ? WGPUTextureFormat_Depth24Plus : WGPUTextureFormat_Undefined;
+    engine->editor_ =
+        EditorUI::create(engine->window_->native_handle(), *engine->gpu_, editor_depth_format);
+    if (!engine->editor_) {
+        throw std::runtime_error("Failed to create EditorUI");
     }
 
     if (config.enable_mcp) {
@@ -100,9 +176,16 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
             throw std::runtime_error("Failed to create ScriptEngine (V8)");
         }
         register_script_bindings(*engine->script_engine_, *engine->world_, *engine->physics_);
-        engine->script_manager_ = ScriptManager::create(*engine->script_engine_, config.script_dir);
+
+        const std::string script_dir =
+            has_project_config ? project_config.scripts_dir.string() : config.script_dir;
+        engine->script_manager_ = ScriptManager::create(*engine->script_engine_, script_dir);
         if (engine->script_manager_) {
-            engine->script_manager_->load_all();
+            if (!startup_script_paths.empty()) {
+                engine->script_manager_->load_paths(startup_script_paths);
+            } else {
+                engine->script_manager_->load_all();
+            }
         }
     }
 #endif
@@ -135,10 +218,7 @@ void Engine::run() {
         }
 #endif
 
-        // Physics step with bidirectional ECS sync
         physics_->step_with_ecs(FIXED_DT, world_->raw());
-
-        // ECS progress (VelocitySystem for non-physics entities, other systems)
         world_->progress(FIXED_DT);
 
         if (camera_) {
@@ -155,11 +235,17 @@ void Engine::run() {
             last_my = my;
         }
 
-        // Editor: begin new ImGui frame and build panel draw calls
         editor_->begin_frame();
-        editor_->draw_panels(*world_, *physics_);
+        editor_->draw_panels(*world_,
+                             *physics_,
+                             {
+                                 .project_path = active_project_path_,
+                                 .scene_path = active_scene_path_,
+                                 .mesh_asset_count = loaded_mesh_asset_count_,
+                                 .script_count = loaded_script_count_,
+                                 .status_text = boot_status_text_,
+                             });
 
-        // Handle window resize: update surface and depth texture dimensions.
         {
             uint32_t fb_w = window_->framebuffer_width();
             uint32_t fb_h = window_->framebuffer_height();
@@ -188,7 +274,6 @@ void Engine::run() {
             } else {
                 renderer_->draw_triangle();
             }
-            // Render ImGui draw data into the active render pass
             editor_->render(renderer_->render_pass());
             renderer_->end_frame();
         }

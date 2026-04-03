@@ -28,6 +28,12 @@ struct Name {
     std::string value;
 };
 
-struct Renderable {};
+struct Renderable {
+    std::string mesh_asset_path;
+};
+
+struct ScriptComponent {
+    std::string script_asset_path;
+};
 
 } // namespace gg

@@ -4,12 +4,15 @@ build/
 
 # wgpu-native prebuilt
 wgpu-native/
+wgpu-native
 
 # V8 prebuilt
 v8/
+v8
 
 # Dear ImGui source (fetched by scripts/setup-imgui.sh)
 third_party/imgui/
+third_party/imgui
 
 # IDE
 .vscode/
@@ -24,6 +27,7 @@ Thumbs.db
 
 # Superpowers brainstorm sessions
 .superpowers/
+.worktrees/
 
 # Design docs (internal)
 docs/
@@ -37,6 +41,10 @@ imgui.ini
 # Codegen temporary shadow headers
 generated/_codegen_shadow/
 generated/_codegen_macros.h
+
+# Runtime TypeScript output
+assets/scripts/*.js
+assets/scripts/*.js.map
 
 # Meson subproject downloads (fetched via wrap files)
 subprojects/flecs/

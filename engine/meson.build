@@ -3,12 +3,17 @@ jolt_dep = dependency('Jolt', fallback: ['jolt', 'Jolt_dep'], required: true)
 nlohmann_json_dep = dependency('nlohmann_json', fallback: ['nlohmann_json', 'nlohmann_json_dep'], required: true)
 
 engine_sources = files(
+  'assets/asset_paths.cpp',
   'core/window.cpp',
   'core/engine.cpp',
   'renderer/gpu_context.cpp',
   'renderer/renderer.cpp',
+  'project/project_config.cpp',
   'ecs/world.cpp',
   'ecs/systems.cpp',
+  'scene/scene_format.cpp',
+  'scene/scene_loader.cpp',
+  'scene/scene_serializer.cpp',
   'physics/physics_layers.cpp',
   'physics/physics_world.cpp',
   'compute/gpu_buffer.cpp',
