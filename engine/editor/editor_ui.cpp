@@ -162,7 +162,8 @@ void EditorUI::draw_panels(World& world,
         ImGui::TextDisabled("Startup scene: none");
     }
 
-    int entity_count = static_cast<int>(world.raw().count<Name>());
+    int entity_count = 0;
+    world.raw().each([&entity_count](flecs::entity, const Name&) { ++entity_count; });
 
     ImGui::Separator();
     ImGui::Text("Entities: %d", entity_count);

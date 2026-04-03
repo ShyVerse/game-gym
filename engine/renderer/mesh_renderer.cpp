@@ -51,13 +51,13 @@ std::unique_ptr<MeshRenderer> MeshRenderer::create(GpuContext& ctx) {
         throw std::runtime_error("MeshRenderer: failed to create shader module");
     }
 
-    // -- Camera + model uniform buffer (128 bytes = 2 * mat4x4<f32>) ---------
+    // -- Camera uniform buffer (64 bytes = mat4x4<f32>) ----------------------
     {
         WGPUBufferDescriptor desc{};
         desc.nextInChain = nullptr;
         desc.label = {.data = "camera-uniform-buf", .length = WGPU_STRLEN};
         desc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform;
-        desc.size = 128;
+        desc.size = 64; // sizeof(mat4x4<f32>)
         desc.mappedAtCreation = false;
         mr->camera_buffer_ = wgpuDeviceCreateBuffer(ctx.device(), &desc);
         if (!mr->camera_buffer_) {
@@ -183,7 +183,7 @@ std::unique_ptr<MeshRenderer> MeshRenderer::create(GpuContext& ctx) {
     bg_entry.binding = 0;
     bg_entry.buffer = mr->camera_buffer_;
     bg_entry.offset = 0;
-    bg_entry.size = 128;
+    bg_entry.size = 64;
     bg_entry.sampler = nullptr;
     bg_entry.textureView = nullptr;
 
@@ -241,20 +241,15 @@ MeshRenderer::~MeshRenderer() {
 // ---------------------------------------------------------------------------
 
 void MeshRenderer::update_camera(const Camera& camera) {
-    view_projection_ = camera.view_projection_matrix();
+    const Mat4 vp = camera.view_projection_matrix();
+    wgpuQueueWriteBuffer(ctx_.queue(), camera_buffer_, 0, vp.data, 64);
 }
 
 // ---------------------------------------------------------------------------
 // draw
 // ---------------------------------------------------------------------------
 
-void MeshRenderer::draw(const Mesh& mesh, const Mat4& model_matrix, WGPURenderPassEncoder pass) {
-    struct Uniforms {
-        Mat4 view_proj;
-        Mat4 model;
-    } uniforms{.view_proj = view_projection_, .model = model_matrix};
-
-    wgpuQueueWriteBuffer(ctx_.queue(), camera_buffer_, 0, &uniforms, sizeof(Uniforms));
+void MeshRenderer::draw(const Mesh& mesh, WGPURenderPassEncoder pass) {
     wgpuRenderPassEncoderSetPipeline(pass, pipeline_);
     wgpuRenderPassEncoderSetBindGroup(pass, 0, bind_group_, 0, nullptr);
     wgpuRenderPassEncoderSetVertexBuffer(pass, 0, mesh.vertex_buffer(), 0, WGPU_WHOLE_SIZE);
