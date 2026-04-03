@@ -189,8 +189,9 @@ struct ScriptManager::Impl {
 
     void enqueue_compile(const std::string& source_path) {
         auto it = std::find_if(
-            pending_compiles.begin(), pending_compiles.end(),
-            [&](const PendingCompile& pending) { return pending.source_path == source_path; });
+            pending_compiles.begin(), pending_compiles.end(), [&](const PendingCompile& pending) {
+                return pending.source_path == source_path;
+            });
         if (it != pending_compiles.end()) {
             it->dirty = true;
             return;
