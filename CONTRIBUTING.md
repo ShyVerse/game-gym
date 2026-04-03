@@ -35,6 +35,19 @@ bash scripts/install-git-hooks.sh
 python3 scripts/check_coverage.py --builddir builddir-coverage --summary-out builddir-coverage/coverage-summary.json
 ```
 
+### Release Tags
+
+```bash
+# build metadata comes from git tags
+./builddir/app/game-gym --version
+
+# create an annotated release tag
+bash scripts/create_release_tag.sh v0.2.0
+
+# publish it to GitHub
+git push origin v0.2.0
+```
+
 ## Code Style
 
 - C++20 standard
@@ -77,6 +90,7 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `style`
 3. Push and create PR
 4. CI must pass (format, build, tidy, codegen)
 5. Code review required before merge
+6. Create a `vMAJOR.MINOR.PATCH` tag only on the merge commit you want to release
 
 ## Project Patterns
 

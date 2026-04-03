@@ -71,6 +71,25 @@ Coverage is enforced on every push and in GitHub Actions.
 
 The coverage gate uses a separate `builddir-coverage` build with Meson's `b_coverage=true` option and evaluates total line coverage with `gcovr`.
 
+## Versioning
+
+Version management is tag-based.
+
+- Release tags use the format `vMAJOR.MINOR.PATCH`
+- Runtime build metadata is derived from `git describe --tags`
+- `./builddir/app/game-gym --version` prints the current build version
+- Pushing a release tag creates a GitHub Release automatically
+
+Examples:
+
+```bash
+# create an annotated release tag on HEAD
+bash scripts/create_release_tag.sh v0.2.0
+
+# publish the tag
+git push origin v0.2.0
+```
+
 Sample files included in the repo:
 
 - `project.ggym`
@@ -179,6 +198,7 @@ GitHub Actions runs on every push and PR:
 | **Build & Test** | Meson build + full test suite |
 | **Clang-Tidy** | Static analysis (bugprone, modernize, performance) |
 | **Codegen Freshness** | Verifies generated files are up to date |
+| **Release** | Publishes a GitHub Release when a `v*.*.*` tag is pushed |
 
 ## License
 

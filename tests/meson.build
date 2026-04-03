@@ -104,6 +104,12 @@ if get_option('enable_tests')
   )
   test('scene_loader', test_scene_loader)
 
+  test_version_info = executable('test_version_info',
+    'test_version_info.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('version_info', test_version_info)
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',
