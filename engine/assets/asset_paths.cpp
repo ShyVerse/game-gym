@@ -7,7 +7,7 @@ namespace {
 
 std::filesystem::path canonical_or_normal(const std::filesystem::path& path) {
     std::error_code ec;
-    const auto canonical = std::filesystem::weakly_canonical(path, ec);
+    auto canonical = std::filesystem::weakly_canonical(path, ec);
     if (!ec) {
         return canonical;
     }
