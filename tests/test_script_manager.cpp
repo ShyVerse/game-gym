@@ -125,3 +125,15 @@ TEST_F(ScriptManagerTest, ReloadCallsOnDestroyThenOnInit) {
         EXPECT_EQ(r.value, "2");
     }
 }
+
+TEST_F(ScriptManagerTest, LoadPathsWithNoPathsDoesNotLoadDirectoryScripts) {
+    write_js("ambient.js", "function onInit() { globalThis.__ambient = true; }\n");
+
+    manager_ = gg::ScriptManager::create(*engine_, tmp_dir_.string());
+    manager_->load_paths({});
+
+    EXPECT_EQ(manager_->loaded_count(), 0u);
+    auto result = engine_->execute("globalThis.__ambient");
+    EXPECT_TRUE(result.ok);
+    EXPECT_EQ(result.value, "undefined");
+}
