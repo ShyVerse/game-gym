@@ -38,5 +38,6 @@ public:
 private:
     EditorUI() = default;
     bool visible_ = true;
+    bool first_frame_ = true;
 };
 } // namespace gg
