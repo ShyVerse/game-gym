@@ -4,6 +4,8 @@
 #include "core/window.h"
 #include "ecs/world.h"
 #include "editor/editor_ui.h"
+#include "editor/gizmo_interaction.h"
+#include "math/vec3.h"
 #include "mcp/mcp_server.h"
 #include "mcp/mcp_stdio_transport.h"
 #include "mcp/mcp_tools.h"
@@ -148,6 +150,7 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
                 engine->camera_->set_aspect(float(config.width) / float(config.height));
                 engine->grid_renderer_ = GridRenderer::create(*engine->gpu_);
                 engine->gizmo_renderer_ = GizmoRenderer::create(*engine->gpu_);
+                engine->gizmo_interaction_ = GizmoInteraction::create();
                 engine->boot_status_text_ = "Startup scene loaded from project file.";
             } else {
                 engine->boot_status_text_ =
@@ -164,6 +167,7 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
             engine->camera_->set_aspect(float(config.width) / float(config.height));
             engine->grid_renderer_ = GridRenderer::create(*engine->gpu_);
             engine->gizmo_renderer_ = GizmoRenderer::create(*engine->gpu_);
+            engine->gizmo_interaction_ = GizmoInteraction::create();
             engine->boot_status_text_ = "Direct model debug boot.";
         }
     }
@@ -236,18 +240,78 @@ void Engine::run() {
         physics_->step_with_ecs(FIXED_DT, world_->raw());
         world_->progress(FIXED_DT);
 
-        if (camera_) {
+        // Gizmo interaction + camera orbit
+        float mx = window_->mouse_x();
+        float my = window_->mouse_y();
+        bool mouse_down = window_->mouse_button(0);
+
+        if (gizmo_interaction_ && camera_ && gizmo_renderer_) {
+            Vec3 eye = camera_->eye_position();
+
+            // Find closest gizmo across all renderable entities
+            struct GizmoTarget {
+                flecs::entity entity;
+                Vec3 position;
+                float distance;
+            };
+            GizmoTarget best_target{};
+            best_target.distance = 1e30f;
+            bool found_target = false;
+
+            if (!mesh_assets_.empty()) {
+                world_->raw().each([&](flecs::entity e,
+                                       const Transform& transform,
+                                       const Renderable& /*r*/) {
+                    float d = vec3_length(vec3_sub(eye, transform.position));
+                    if (d < best_target.distance) {
+                        best_target.entity = e;
+                        best_target.position = transform.position;
+                        best_target.distance = d;
+                        found_target = true;
+                    }
+                });
+            }
+
+            if (found_target) {
+                float gizmo_scale = best_target.distance * std::tan(camera_->fov() / 2.0f) * 0.12f;
+                gizmo_interaction_->update(mx, my, mouse_down,
+                    window_->framebuffer_width(), window_->framebuffer_height(),
+                    *camera_, best_target.position, gizmo_scale);
+
+                Vec3 delta = gizmo_interaction_->position_delta();
+                if (gizmo_interaction_->state().dragging_axis >= 0) {
+                    auto* t = best_target.entity.get_mut<Transform>();
+                    if (t != nullptr) {
+                        t->position = vec3_add(t->position, delta);
+
+                        const auto* rb = best_target.entity.get<RigidBody>();
+                        if (rb != nullptr) {
+                            best_target.entity.set<RigidBody>({
+                                .body_id = rb->body_id,
+                                .sync_to_physics = true,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Camera orbit (skip while dragging gizmo)
+        bool is_dragging_gizmo = gizmo_interaction_ &&
+                                  gizmo_interaction_->state().dragging_axis >= 0;
+        if (camera_ && !is_dragging_gizmo) {
             static float last_mx = window_->mouse_x();
             static float last_my = window_->mouse_y();
-            float mx = window_->mouse_x();
-            float my = window_->mouse_y();
-            if (window_->mouse_button(0)) {
+            if (mouse_down) {
                 camera_->orbit(mx - last_mx, my - last_my);
             }
             camera_->zoom(window_->scroll_delta_y());
             window_->reset_scroll();
             last_mx = mx;
             last_my = my;
+        } else if (camera_) {
+            camera_->zoom(window_->scroll_delta_y());
+            window_->reset_scroll();
         }
 
         editor_->begin_frame();
@@ -312,10 +376,17 @@ void Engine::run() {
 
             // Gizmo on renderable entities
             if (gizmo_renderer_ && camera_ && !mesh_assets_.empty()) {
+                Vec3 eye = camera_->eye_position();
+                int hovered = gizmo_interaction_ ? gizmo_interaction_->state().hovered_axis : -1;
+                int dragging = gizmo_interaction_ ? gizmo_interaction_->state().dragging_axis : -1;
+
                 world_->raw().each([&](flecs::entity /*e*/,
                                        const Transform& transform,
                                        const Renderable& /*r*/) {
-                    gizmo_renderer_->draw(transform.position, *camera_, renderer_->render_pass());
+                    float dist = vec3_length(vec3_sub(eye, transform.position));
+                    float s = dist * std::tan(camera_->fov() / 2.0f) * 0.12f;
+                    gizmo_renderer_->draw(transform.position, *camera_,
+                                          renderer_->render_pass(), s, hovered, dragging);
                 });
             }
 
