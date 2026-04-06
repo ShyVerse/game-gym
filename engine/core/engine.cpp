@@ -13,6 +13,7 @@
 #include "physics/physics_world.h"
 #include "project/project_config.h"
 #include "renderer/camera.h"
+#include "renderer/gizmo_constants.h"
 #include "renderer/gizmo_renderer.h"
 #include "renderer/gltf_loader.h"
 #include "renderer/gpu_context.h"
@@ -244,14 +245,13 @@ void Engine::run() {
         world_->progress(FIXED_DT);
 
         // Gizmo interaction + camera orbit
-        static constexpr float GIZMO_SCREEN_RATIO = 0.25f;
 
         float mx = window_->mouse_x();
         float my = window_->mouse_y();
         bool left_down = window_->mouse_button(0);
         bool right_down = window_->mouse_button(1);
-        static float last_mx = 0.0f;
-        static float last_my = 0.0f;
+        static float last_mx = mx;
+        static float last_my = my;
         static flecs::entity gizmo_target_entity;
 
         if (gizmo_interaction_ && camera_ && gizmo_renderer_) {
@@ -284,7 +284,7 @@ void Engine::run() {
                 if (target_t != nullptr) {
                     float cam_dist = vec3_length(vec3_sub(eye, target_t->position));
                     float gizmo_scale =
-                        cam_dist * std::tan(camera_->fov() / 2.0f) * GIZMO_SCREEN_RATIO;
+                        cam_dist * std::tan(camera_->fov() / 2.0f) * gizmo::SCREEN_RATIO;
 
                     gizmo_interaction_->update(mx,
                                                my,
@@ -406,7 +406,7 @@ void Engine::run() {
                 world_->raw().each(
                     [&](flecs::entity e, const Transform& transform, const Renderable& /*r*/) {
                         float dist = vec3_length(vec3_sub(eye, transform.position));
-                        float s = dist * std::tan(camera_->fov() / 2.0f) * GIZMO_SCREEN_RATIO;
+                        float s = dist * std::tan(camera_->fov() / 2.0f) * gizmo::SCREEN_RATIO;
                         // Only highlight the entity being interacted with
                         bool is_target = gizmo_target_entity.is_valid() && e == gizmo_target_entity;
                         int eh = is_target ? hovered : -1;

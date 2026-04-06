@@ -1,6 +1,7 @@
 #include "renderer/gizmo_renderer.h"
 
 #include "renderer/camera.h"
+#include "renderer/gizmo_constants.h"
 #include "renderer/gpu_context.h"
 
 #include <algorithm>

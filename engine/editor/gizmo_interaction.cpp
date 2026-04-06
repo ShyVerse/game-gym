@@ -3,6 +3,7 @@
 #include "math/ray.h"
 #include "math/vec3.h"
 #include "renderer/camera.h"
+#include "renderer/gizmo_constants.h"
 
 #include <array>
 #include <cmath>
@@ -10,15 +11,8 @@
 namespace gg {
 
 static constexpr float HIT_THRESHOLD_FACTOR = 0.35f;
-static constexpr float ARROW_TOTAL_LENGTH = 1.5f; // SHAFT_LENGTH(1.2) + CONE_LENGTH(0.3)
-static constexpr float PLANE_QUAD_RATIO = 0.3f;   // plane quad at 30% of arrow length
-static constexpr float CENTER_HIT_RATIO = 0.12f;  // center cube hit radius
-
-static constexpr std::array<Vec3, 3> AXIS_DIRS = {{
-    {1.0f, 0.0f, 0.0f},
-    {0.0f, 1.0f, 0.0f},
-    {0.0f, 0.0f, 1.0f},
-}};
+static constexpr float PLANE_QUAD_RATIO = 0.3f;  // plane quad at 30% of arrow length
+static constexpr float CENTER_HIT_RATIO = 0.12f; // center cube hit radius
 
 // Plane normals: XY→Z, XZ→Y, YZ→X
 static constexpr std::array<Vec3, 3> PLANE_NORMALS = {{
@@ -76,7 +70,7 @@ void GizmoInteraction::update(float mouse_x,
 
         if (drag <= 2) {
             // Single axis drag
-            const Vec3& axis_dir = AXIS_DIRS[drag];
+            const Vec3& axis_dir = gizmo::AXIS_DIRS[drag];
             float t = 0.0f;
             ray_axis_distance(ray, state_.drag_start_pos, axis_dir, t);
             Vec3 closest = vec3_add(state_.drag_start_pos, vec3_scale(axis_dir, t));
@@ -106,14 +100,14 @@ void GizmoInteraction::update(float mouse_x,
     int best_target = -1;
     float best_score = 1e30f; // lower is better
 
-    float arrow_len = ARROW_TOTAL_LENGTH * gizmo_scale;
+    float arrow_len = gizmo::ARROW_TOTAL_LENGTH * gizmo_scale;
     float quad_size = PLANE_QUAD_RATIO * arrow_len;
     float center_radius = CENTER_HIT_RATIO * arrow_len;
 
     // Test single axes (0, 1, 2)
     for (int i = 0; i < 3; ++i) {
         float t = 0.0f;
-        float dist = ray_axis_distance(ray, gizmo_position, AXIS_DIRS[i], t);
+        float dist = ray_axis_distance(ray, gizmo_position, gizmo::AXIS_DIRS[i], t);
         if (t >= 0.0f && t <= arrow_len && dist < threshold && dist < best_score) {
             best_score = dist;
             best_target = i;
@@ -170,8 +164,9 @@ void GizmoInteraction::update(float mouse_x,
 
         if (best_target <= 2) {
             float t = 0.0f;
-            ray_axis_distance(ray, gizmo_position, AXIS_DIRS[best_target], t);
-            last_hit_point_ = vec3_add(gizmo_position, vec3_scale(AXIS_DIRS[best_target], t));
+            ray_axis_distance(ray, gizmo_position, gizmo::AXIS_DIRS[best_target], t);
+            last_hit_point_ =
+                vec3_add(gizmo_position, vec3_scale(gizmo::AXIS_DIRS[best_target], t));
         } else if (best_target <= 5) {
             int plane_idx = best_target - 3;
             Vec3 hit{};
