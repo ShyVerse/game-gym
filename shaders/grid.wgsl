@@ -54,7 +54,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     }
 
     let alpha = grid_alpha * fade * 0.6;
-    if alpha < 0.01 {
+    if alpha < 0.05 {
         discard;
     }
     return vec4f(color, alpha);

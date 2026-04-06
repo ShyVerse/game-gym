@@ -103,7 +103,7 @@ std::unique_ptr<GridRenderer> GridRenderer::create(GpuContext& ctx) {
     depth_stencil.nextInChain = nullptr;
     depth_stencil.format = WGPUTextureFormat_Depth24Plus;
     depth_stencil.depthWriteEnabled = WGPUOptionalBool_False;
-    depth_stencil.depthCompare = WGPUCompareFunction_LessEqual;
+    depth_stencil.depthCompare = WGPUCompareFunction_Less;
     depth_stencil.stencilFront = {
         .compare = WGPUCompareFunction_Always,
         .failOp = WGPUStencilOperation_Keep,
