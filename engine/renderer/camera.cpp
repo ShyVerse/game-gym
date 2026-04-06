@@ -49,4 +49,20 @@ Mat4 Camera::view_projection_matrix() const {
     return projection_matrix() * view_matrix();
 }
 
+Vec3 Camera::eye_position() const {
+    float cos_p = std::cos(pitch_);
+    float sin_p = std::sin(pitch_);
+    float cos_y = std::cos(yaw_);
+    float sin_y = std::sin(yaw_);
+    return {
+        target_.x + distance_ * cos_p * sin_y,
+        target_.y + distance_ * sin_p,
+        target_.z + distance_ * cos_p * cos_y,
+    };
+}
+
+float Camera::fov() const {
+    return fov_;
+}
+
 } // namespace gg

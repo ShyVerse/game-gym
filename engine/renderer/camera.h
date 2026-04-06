@@ -20,6 +20,8 @@ public:
     [[nodiscard]] Mat4 view_matrix() const;
     [[nodiscard]] Mat4 projection_matrix() const;
     [[nodiscard]] Mat4 view_projection_matrix() const;
+    [[nodiscard]] Vec3 eye_position() const;
+    [[nodiscard]] float fov() const;
 
 private:
     Camera() = default;
