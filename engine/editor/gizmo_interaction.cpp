@@ -9,9 +9,10 @@
 
 namespace gg {
 
-static constexpr float HIT_THRESHOLD_FACTOR = 0.15f;
+static constexpr float HIT_THRESHOLD_FACTOR = 0.35f;
 static constexpr float ARROW_TOTAL_LENGTH = 1.5f; // SHAFT_LENGTH(1.2) + CONE_LENGTH(0.3)
 
+// Axis directions (unit vectors)
 static constexpr std::array<Vec3, 3> AXIS_DIRS = {{
     {1.0f, 0.0f, 0.0f},
     {0.0f, 1.0f, 0.0f},
@@ -51,8 +52,9 @@ void GizmoInteraction::update(float mouse_x,
         int axis = state_.dragging_axis;
         const Vec3& axis_dir = AXIS_DIRS[axis];
         float t = 0.0f;
-        ray_axis_distance(ray, gizmo_position, axis_dir, t);
-        Vec3 closest = vec3_add(gizmo_position, vec3_scale(axis_dir, t));
+        // Use drag_start_pos as fixed axis origin (not moving gizmo_position)
+        ray_axis_distance(ray, state_.drag_start_pos, axis_dir, t);
+        Vec3 closest = vec3_add(state_.drag_start_pos, vec3_scale(axis_dir, t));
         frame_delta_ = vec3_sub(closest, last_closest_point_);
         last_closest_point_ = closest;
         return;
@@ -60,12 +62,12 @@ void GizmoInteraction::update(float mouse_x,
 
     int best_axis = -1;
     float best_dist = threshold;
+    float arrow_len = ARROW_TOTAL_LENGTH * gizmo_scale;
 
     for (int i = 0; i < 3; ++i) {
         float t = 0.0f;
         float dist = ray_axis_distance(ray, gizmo_position, AXIS_DIRS[i], t);
 
-        float arrow_len = ARROW_TOTAL_LENGTH * gizmo_scale;
         if (t < 0.0f || t > arrow_len) {
             continue;
         }
