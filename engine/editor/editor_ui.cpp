@@ -129,6 +129,9 @@ void EditorUI::draw_panels(World& world,
             if (ImGui::MenuItem("Toggle Editor", "F1")) {
                 visible_ = !visible_;
             }
+            if (ImGui::MenuItem("Reset Layout")) {
+                first_frame_ = true;
+            }
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
