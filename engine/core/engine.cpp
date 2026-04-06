@@ -148,7 +148,8 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
             if (!engine->mesh_assets_.empty()) {
                 engine->mesh_renderer_ = MeshRenderer::create(*engine->gpu_);
                 engine->camera_ = Camera::create();
-                engine->camera_->set_aspect(static_cast<float>(config.width) / static_cast<float>(config.height));
+                engine->camera_->set_aspect(static_cast<float>(config.width) /
+                                            static_cast<float>(config.height));
                 engine->grid_renderer_ = GridRenderer::create(*engine->gpu_);
                 engine->gizmo_renderer_ = GizmoRenderer::create(*engine->gpu_);
                 engine->gizmo_interaction_ = GizmoInteraction::create();
@@ -165,7 +166,8 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         if (!engine->meshes_.empty()) {
             engine->mesh_renderer_ = MeshRenderer::create(*engine->gpu_);
             engine->camera_ = Camera::create();
-            engine->camera_->set_aspect(static_cast<float>(config.width) / static_cast<float>(config.height));
+            engine->camera_->set_aspect(static_cast<float>(config.width) /
+                                        static_cast<float>(config.height));
             engine->grid_renderer_ = GridRenderer::create(*engine->gpu_);
             engine->gizmo_renderer_ = GizmoRenderer::create(*engine->gpu_);
             engine->gizmo_interaction_ = GizmoInteraction::create();
