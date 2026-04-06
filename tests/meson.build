@@ -110,6 +110,30 @@ if get_option('enable_tests')
   )
   test('version_info', test_version_info)
 
+  test_vec3 = executable('test_vec3',
+    'test_vec3.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('vec3', test_vec3)
+
+  test_mat4_inverse = executable('test_mat4_inverse',
+    'test_mat4_inverse.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('mat4_inverse', test_mat4_inverse)
+
+  test_ray = executable('test_ray',
+    'test_ray.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('ray', test_ray)
+
+  test_gizmo_interaction = executable('test_gizmo_interaction',
+    'test_gizmo_interaction.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('gizmo_interaction', test_gizmo_interaction)
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',

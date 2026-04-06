@@ -4,12 +4,16 @@
 #include "core/window.h"
 #include "ecs/world.h"
 #include "editor/editor_ui.h"
+#include "editor/gizmo_interaction.h"
+#include "math/ray.h"
+#include "math/vec3.h"
 #include "mcp/mcp_server.h"
 #include "mcp/mcp_stdio_transport.h"
 #include "mcp/mcp_tools.h"
 #include "physics/physics_world.h"
 #include "project/project_config.h"
 #include "renderer/camera.h"
+#include "renderer/gizmo_constants.h"
 #include "renderer/gizmo_renderer.h"
 #include "renderer/gltf_loader.h"
 #include "renderer/gpu_context.h"
@@ -145,9 +149,11 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
             if (!engine->mesh_assets_.empty()) {
                 engine->mesh_renderer_ = MeshRenderer::create(*engine->gpu_);
                 engine->camera_ = Camera::create();
-                engine->camera_->set_aspect(float(config.width) / float(config.height));
+                engine->camera_->set_aspect(static_cast<float>(config.width) /
+                                            static_cast<float>(config.height));
                 engine->grid_renderer_ = GridRenderer::create(*engine->gpu_);
                 engine->gizmo_renderer_ = GizmoRenderer::create(*engine->gpu_);
+                engine->gizmo_interaction_ = GizmoInteraction::create();
                 engine->boot_status_text_ = "Startup scene loaded from project file.";
             } else {
                 engine->boot_status_text_ =
@@ -161,9 +167,11 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         if (!engine->meshes_.empty()) {
             engine->mesh_renderer_ = MeshRenderer::create(*engine->gpu_);
             engine->camera_ = Camera::create();
-            engine->camera_->set_aspect(float(config.width) / float(config.height));
+            engine->camera_->set_aspect(static_cast<float>(config.width) /
+                                        static_cast<float>(config.height));
             engine->grid_renderer_ = GridRenderer::create(*engine->gpu_);
             engine->gizmo_renderer_ = GizmoRenderer::create(*engine->gpu_);
+            engine->gizmo_interaction_ = GizmoInteraction::create();
             engine->boot_status_text_ = "Direct model debug boot.";
         }
     }
@@ -236,19 +244,90 @@ void Engine::run() {
         physics_->step_with_ecs(FIXED_DT, world_->raw());
         world_->progress(FIXED_DT);
 
+        // Gizmo interaction + camera orbit
+
+        float mx = window_->mouse_x();
+        float my = window_->mouse_y();
+        bool left_down = window_->mouse_button(0);
+        bool right_down = window_->mouse_button(1);
+        static float last_mx = mx;
+        static float last_my = my;
+        static flecs::entity gizmo_target_entity;
+
+        if (gizmo_interaction_ && camera_ && gizmo_renderer_) {
+            Vec3 eye = camera_->eye_position();
+            bool is_dragging = gizmo_interaction_->state().dragging_axis >= 0;
+
+            // Find the closest renderable entity (by camera distance)
+            flecs::entity closest_entity;
+            Vec3 closest_pos{};
+            float closest_cam_dist = 1e30f;
+
+            if (!mesh_assets_.empty()) {
+                world_->raw().each(
+                    [&](flecs::entity e, const Transform& transform, const Renderable& /*r*/) {
+                        float d = vec3_length(vec3_sub(eye, transform.position));
+                        if (d < closest_cam_dist) {
+                            closest_entity = e;
+                            closest_pos = transform.position;
+                            closest_cam_dist = d;
+                        }
+                    });
+            }
+
+            if (closest_entity.is_valid()) {
+                // Use dragged entity during drag, closest entity otherwise
+                flecs::entity target = is_dragging && gizmo_target_entity.is_valid()
+                                           ? gizmo_target_entity
+                                           : closest_entity;
+                const auto* target_t = target.get<Transform>();
+                if (target_t != nullptr) {
+                    float cam_dist = vec3_length(vec3_sub(eye, target_t->position));
+                    float gizmo_scale =
+                        cam_dist * std::tan(camera_->fov() / 2.0f) * gizmo::SCREEN_RATIO;
+
+                    gizmo_interaction_->update(mx,
+                                               my,
+                                               left_down,
+                                               window_->width(),
+                                               window_->height(),
+                                               *camera_,
+                                               target_t->position,
+                                               gizmo_scale);
+
+                    gizmo_target_entity = target;
+
+                    // Apply drag delta
+                    Vec3 delta = gizmo_interaction_->position_delta();
+                    if (gizmo_interaction_->state().dragging_axis >= 0) {
+                        auto* mut_t = target.get_mut<Transform>();
+                        if (mut_t != nullptr) {
+                            mut_t->position = vec3_add(mut_t->position, delta);
+
+                            const auto* rb = target.get<RigidBody>();
+                            if (rb != nullptr) {
+                                target.set<RigidBody>({
+                                    .body_id = rb->body_id,
+                                    .sync_to_physics = true,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Camera orbit (right mouse button)
         if (camera_) {
-            static float last_mx = window_->mouse_x();
-            static float last_my = window_->mouse_y();
-            float mx = window_->mouse_x();
-            float my = window_->mouse_y();
-            if (window_->mouse_button(0)) {
+            if (right_down) {
                 camera_->orbit(mx - last_mx, my - last_my);
             }
             camera_->zoom(window_->scroll_delta_y());
             window_->reset_scroll();
-            last_mx = mx;
-            last_my = my;
         }
+        // Always update last mouse position (prevents jump after drag ends)
+        last_mx = mx;
+        last_my = my;
 
         editor_->begin_frame();
         editor_->draw_panels(*world_,
@@ -281,9 +360,10 @@ void Engine::run() {
         }
 
         if (renderer_->begin_frame()) {
-            if (mesh_renderer_ && camera_ && !mesh_assets_.empty()) {
+            if (mesh_renderer_ && camera_ &&
+                !mesh_assets_.empty()) { // NOLINT(bugprone-branch-clone)
                 mesh_renderer_->update_camera(*camera_);
-                world_->raw().each([&](flecs::entity entity,
+                world_->raw().each([&](flecs::entity /*entity*/,
                                        const Transform& transform,
                                        const Renderable& renderable) {
                     auto it = mesh_assets_.find(renderable.mesh_asset_path);
@@ -310,13 +390,23 @@ void Engine::run() {
                 grid_renderer_->draw(renderer_->render_pass());
             }
 
-            // Gizmo on renderable entities
+            // Gizmo on the closest (or selected) entity only
             if (gizmo_renderer_ && camera_ && !mesh_assets_.empty()) {
-                world_->raw().each([&](flecs::entity /*e*/,
-                                       const Transform& transform,
-                                       const Renderable& /*r*/) {
-                    gizmo_renderer_->draw(transform.position, *camera_, renderer_->render_pass());
-                });
+                flecs::entity gizmo_entity = gizmo_target_entity;
+                if (gizmo_entity.is_valid()) {
+                    const auto* gt = gizmo_entity.get<Transform>();
+                    if (gt != nullptr) {
+                        Vec3 eye = camera_->eye_position();
+                        float dist = vec3_length(vec3_sub(eye, gt->position));
+                        float s = dist * std::tan(camera_->fov() / 2.0f) * gizmo::SCREEN_RATIO;
+                        int hovered =
+                            gizmo_interaction_ ? gizmo_interaction_->state().hovered_axis : -1;
+                        int dragging =
+                            gizmo_interaction_ ? gizmo_interaction_->state().dragging_axis : -1;
+                        gizmo_renderer_->draw(
+                            gt->position, *camera_, renderer_->render_pass(), s, hovered, dragging);
+                    }
+                }
             }
 
             editor_->render(renderer_->render_pass());

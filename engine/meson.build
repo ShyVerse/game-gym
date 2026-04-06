@@ -38,6 +38,7 @@ engine_sources = files(
   'renderer/mesh_renderer.cpp',
   'renderer/grid_renderer.cpp',
   'renderer/gizmo_renderer.cpp',
+  'editor/gizmo_interaction.cpp',
   'version/version_info.h',
   'editor/editor_ui.cpp',
   'mcp/mcp_server.cpp',

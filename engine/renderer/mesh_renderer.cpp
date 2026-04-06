@@ -4,28 +4,12 @@
 #include "renderer/camera.h"
 #include "renderer/gpu_context.h"
 #include "renderer/mesh.h"
+#include "renderer/shader_utils.h"
 
 #include <cstdio>
 #include <cstring>
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
 
 namespace gg {
-
-// ---------------------------------------------------------------------------
-// Helper: read a file to string
-// ---------------------------------------------------------------------------
-
-static std::string read_shader_file(const std::string& path) {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        throw std::runtime_error("MeshRenderer: cannot open shader file: " + path);
-    }
-    std::ostringstream ss;
-    ss << file.rdbuf();
-    return ss.str();
-}
 
 // ---------------------------------------------------------------------------
 // Factory

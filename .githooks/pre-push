@@ -21,7 +21,12 @@ echo "pre-push: running clang-tidy on changed files..."
 TIDY_FILES=$(git diff --name-only HEAD~1 -- 'engine/*.cpp' | grep -v 'engine/script/' || true)
 if [ -n "$TIDY_FILES" ]; then
   CLANG_TIDY="$(brew --prefix llvm)/bin/clang-tidy"
-  echo "$TIDY_FILES" | xargs "$CLANG_TIDY" -p builddir --header-filter='^$'
+  SDK_PATH="$(xcrun --show-sdk-path 2>/dev/null || true)"
+  if [ -n "$SDK_PATH" ]; then
+    echo "$TIDY_FILES" | xargs "$CLANG_TIDY" -p builddir --header-filter='^$' --extra-arg=-isysroot --extra-arg="$SDK_PATH"
+  else
+    echo "$TIDY_FILES" | xargs "$CLANG_TIDY" -p builddir --header-filter='^$'
+  fi
 fi
 
 echo "pre-push: running build check..."

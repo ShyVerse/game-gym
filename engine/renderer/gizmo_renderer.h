@@ -18,7 +18,8 @@ public:
     GizmoRenderer(GizmoRenderer&&) = delete;
     GizmoRenderer& operator=(GizmoRenderer&&) = delete;
 
-    void draw(const Vec3& position, const Camera& camera, WGPURenderPassEncoder pass);
+    void draw(const Vec3& position, const Camera& camera, WGPURenderPassEncoder pass,
+              float scale = 1.0f, int hovered_axis = -1, int dragging_axis = -1);
 
 private:
     explicit GizmoRenderer(GpuContext& ctx);

@@ -2,23 +2,11 @@
 
 #include "renderer/camera.h"
 #include "renderer/gpu_context.h"
+#include "renderer/shader_utils.h"
 
 #include <cstdio>
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
 
 namespace gg {
-
-static std::string read_shader_file(const std::string& path) {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        throw std::runtime_error("GridRenderer: cannot open shader: " + path);
-    }
-    std::ostringstream ss;
-    ss << file.rdbuf();
-    return ss.str();
-}
 
 std::unique_ptr<GridRenderer> GridRenderer::create(GpuContext& ctx) {
     auto gr = std::unique_ptr<GridRenderer>(new GridRenderer(ctx));
