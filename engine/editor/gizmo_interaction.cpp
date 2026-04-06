@@ -24,10 +24,14 @@ std::unique_ptr<GizmoInteraction> GizmoInteraction::create() {
 
 GizmoInteraction::~GizmoInteraction() = default;
 
-void GizmoInteraction::update(float mouse_x, float mouse_y, bool mouse_down,
-                              uint32_t fb_width, uint32_t fb_height,
+void GizmoInteraction::update(float mouse_x,
+                              float mouse_y,
+                              bool mouse_down,
+                              uint32_t fb_width,
+                              uint32_t fb_height,
                               const Camera& camera,
-                              const Vec3& gizmo_position, float gizmo_scale) {
+                              const Vec3& gizmo_position,
+                              float gizmo_scale) {
     frame_delta_ = {0.0f, 0.0f, 0.0f};
     bool just_pressed = mouse_down && !was_mouse_down_;
     bool just_released = !mouse_down && was_mouse_down_;

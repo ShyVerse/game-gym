@@ -82,23 +82,23 @@ TEST_F(GizmoInteractionTest, ClickStartsDrag) {
 
 TEST_F(GizmoInteractionTest, ReleaseEndsDrag) {
     auto [sx, sy] = world_to_screen({0.6f, 0.0f, 0.0f});
-    update(sx, sy, false);  // hover
-    update(sx, sy, true);   // press
+    update(sx, sy, false); // hover
+    update(sx, sy, true);  // press
     ASSERT_EQ(gi_->state().dragging_axis, 0);
-    update(sx, sy, false);  // release
+    update(sx, sy, false); // release
     EXPECT_EQ(gi_->state().dragging_axis, -1);
 }
 
 TEST_F(GizmoInteractionTest, DragProducesNonZeroDelta) {
     auto [sx, sy] = world_to_screen({0.6f, 0.0f, 0.0f});
-    update(sx, sy, false);   // hover X axis
+    update(sx, sy, false); // hover X axis
     ASSERT_EQ(gi_->state().hovered_axis, 0);
-    update(sx, sy, true);    // start drag
+    update(sx, sy, true); // start drag
     ASSERT_EQ(gi_->state().dragging_axis, 0);
 
     // Move mouse further along X direction
     auto [sx2, sy2] = world_to_screen({1.0f, 0.0f, 0.0f});
-    update(sx2, sy2, true);  // drag
+    update(sx2, sy2, true); // drag
 
     auto d = gi_->position_delta();
     // Delta should be positive along X, near-zero on Y and Z
@@ -109,8 +109,8 @@ TEST_F(GizmoInteractionTest, DragProducesNonZeroDelta) {
 
 TEST_F(GizmoInteractionTest, DragDeltaIsZeroOnRelease) {
     auto [sx, sy] = world_to_screen({0.6f, 0.0f, 0.0f});
-    update(sx, sy, false);  // hover
-    update(sx, sy, true);   // press
+    update(sx, sy, false); // hover
+    update(sx, sy, true);  // press
 
     auto [sx2, sy2] = world_to_screen({1.0f, 0.0f, 0.0f});
     update(sx2, sy2, true); // drag

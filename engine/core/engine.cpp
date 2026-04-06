@@ -255,8 +255,8 @@ void Engine::run() {
             Vec3 eye = camera_->eye_position();
             Mat4 vp = camera_->view_projection_matrix();
             Mat4 inv_vp = vp.inverse();
-            Ray ray = ray_from_screen(mx, my,
-                window_->framebuffer_width(), window_->framebuffer_height(), inv_vp);
+            Ray ray = ray_from_screen(
+                mx, my, window_->framebuffer_width(), window_->framebuffer_height(), inv_vp);
 
             // Find best gizmo+axis by ray hit (not camera distance)
             struct GizmoTarget {
@@ -269,36 +269,42 @@ void Engine::run() {
             bool found_target = false;
 
             if (!mesh_assets_.empty()) {
-                world_->raw().each([&](flecs::entity e,
-                                       const Transform& transform,
-                                       const Renderable& /*r*/) {
-                    float cam_dist = vec3_length(vec3_sub(eye, transform.position));
-                    float scale = cam_dist * std::tan(camera_->fov() / 2.0f) * GIZMO_SCREEN_RATIO;
-                    float threshold = scale * 0.15f;
-                    float arrow_len = 1.5f * scale;
+                world_->raw().each(
+                    [&](flecs::entity e, const Transform& transform, const Renderable& /*r*/) {
+                        float cam_dist = vec3_length(vec3_sub(eye, transform.position));
+                        float scale =
+                            cam_dist * std::tan(camera_->fov() / 2.0f) * GIZMO_SCREEN_RATIO;
+                        float threshold = scale * 0.15f;
+                        float arrow_len = 1.5f * scale;
 
-                    for (int axis = 0; axis < 3; ++axis) {
-                        Vec3 axis_dir = (axis == 0) ? Vec3{1,0,0}
-                                      : (axis == 1) ? Vec3{0,1,0}
-                                                     : Vec3{0,0,1};
-                        float t = 0.0f;
-                        float dist = ray_axis_distance(ray, transform.position, axis_dir, t);
-                        if (t >= 0.0f && t <= arrow_len && dist < threshold && dist < best_target.ray_dist) {
-                            best_target.entity = e;
-                            best_target.position = transform.position;
-                            best_target.ray_dist = dist;
-                            found_target = true;
+                        for (int axis = 0; axis < 3; ++axis) {
+                            Vec3 axis_dir = (axis == 0)   ? Vec3{1, 0, 0}
+                                            : (axis == 1) ? Vec3{0, 1, 0}
+                                                          : Vec3{0, 0, 1};
+                            float t = 0.0f;
+                            float dist = ray_axis_distance(ray, transform.position, axis_dir, t);
+                            if (t >= 0.0f && t <= arrow_len && dist < threshold &&
+                                dist < best_target.ray_dist) {
+                                best_target.entity = e;
+                                best_target.position = transform.position;
+                                best_target.ray_dist = dist;
+                                found_target = true;
+                            }
                         }
-                    }
-                });
+                    });
             }
 
             if (found_target) {
                 float cam_dist = vec3_length(vec3_sub(eye, best_target.position));
                 float gizmo_scale = cam_dist * std::tan(camera_->fov() / 2.0f) * GIZMO_SCREEN_RATIO;
-                gizmo_interaction_->update(mx, my, mouse_down,
-                    window_->framebuffer_width(), window_->framebuffer_height(),
-                    *camera_, best_target.position, gizmo_scale);
+                gizmo_interaction_->update(mx,
+                                           my,
+                                           mouse_down,
+                                           window_->framebuffer_width(),
+                                           window_->framebuffer_height(),
+                                           *camera_,
+                                           best_target.position,
+                                           gizmo_scale);
                 gizmo_target_entity = best_target.entity;
 
                 Vec3 delta = gizmo_interaction_->position_delta();
@@ -318,16 +324,21 @@ void Engine::run() {
                 }
             } else if (gizmo_interaction_->state().dragging_axis < 0) {
                 // No target hovered and not dragging — clear state
-                gizmo_interaction_->update(mx, my, false,
-                    window_->framebuffer_width(), window_->framebuffer_height(),
-                    *camera_, {}, 1.0f);
+                gizmo_interaction_->update(mx,
+                                           my,
+                                           false,
+                                           window_->framebuffer_width(),
+                                           window_->framebuffer_height(),
+                                           *camera_,
+                                           {},
+                                           1.0f);
                 gizmo_target_entity = flecs::entity{};
             }
         }
 
         // Camera orbit (skip while dragging gizmo)
-        bool is_dragging_gizmo = gizmo_interaction_ &&
-                                  gizmo_interaction_->state().dragging_axis >= 0;
+        bool is_dragging_gizmo =
+            gizmo_interaction_ && gizmo_interaction_->state().dragging_axis >= 0;
         if (camera_ && !is_dragging_gizmo) {
             if (mouse_down) {
                 camera_->orbit(mx - last_mx, my - last_my);
@@ -408,19 +419,17 @@ void Engine::run() {
                 int hovered = gizmo_interaction_ ? gizmo_interaction_->state().hovered_axis : -1;
                 int dragging = gizmo_interaction_ ? gizmo_interaction_->state().dragging_axis : -1;
 
-                world_->raw().each([&](flecs::entity e,
-                                       const Transform& transform,
-                                       const Renderable& /*r*/) {
-                    float dist = vec3_length(vec3_sub(eye, transform.position));
-                    float s = dist * std::tan(camera_->fov() / 2.0f) * GIZMO_SCREEN_RATIO;
-                    // Only highlight the entity being interacted with
-                    bool is_target = gizmo_target_entity.is_valid() &&
-                                     e == gizmo_target_entity;
-                    int eh = is_target ? hovered : -1;
-                    int ed = is_target ? dragging : -1;
-                    gizmo_renderer_->draw(transform.position, *camera_,
-                                          renderer_->render_pass(), s, eh, ed);
-                });
+                world_->raw().each(
+                    [&](flecs::entity e, const Transform& transform, const Renderable& /*r*/) {
+                        float dist = vec3_length(vec3_sub(eye, transform.position));
+                        float s = dist * std::tan(camera_->fov() / 2.0f) * GIZMO_SCREEN_RATIO;
+                        // Only highlight the entity being interacted with
+                        bool is_target = gizmo_target_entity.is_valid() && e == gizmo_target_entity;
+                        int eh = is_target ? hovered : -1;
+                        int ed = is_target ? dragging : -1;
+                        gizmo_renderer_->draw(
+                            transform.position, *camera_, renderer_->render_pass(), s, eh, ed);
+                    });
             }
 
             editor_->render(renderer_->render_pass());
