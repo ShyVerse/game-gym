@@ -128,6 +128,12 @@ if get_option('enable_tests')
   )
   test('ray', test_ray)
 
+  test_gizmo_interaction = executable('test_gizmo_interaction',
+    'test_gizmo_interaction.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('gizmo_interaction', test_gizmo_interaction)
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',
