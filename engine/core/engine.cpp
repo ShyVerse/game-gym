@@ -295,14 +295,7 @@ void Engine::run() {
                                                target_t->position,
                                                gizmo_scale);
 
-                    // Track which entity is targeted
-                    if (gizmo_interaction_->state().dragging_axis >= 0) {
-                        gizmo_target_entity = target;
-                    } else if (!is_dragging) {
-                        gizmo_target_entity = gizmo_interaction_->state().hovered_axis >= 0
-                                                  ? target
-                                                  : flecs::entity{};
-                    }
+                    gizmo_target_entity = target;
 
                     // Apply drag delta
                     Vec3 delta = gizmo_interaction_->position_delta();
@@ -397,23 +390,23 @@ void Engine::run() {
                 grid_renderer_->draw(renderer_->render_pass());
             }
 
-            // Gizmo on renderable entities
+            // Gizmo on the closest (or selected) entity only
             if (gizmo_renderer_ && camera_ && !mesh_assets_.empty()) {
-                Vec3 eye = camera_->eye_position();
-                int hovered = gizmo_interaction_ ? gizmo_interaction_->state().hovered_axis : -1;
-                int dragging = gizmo_interaction_ ? gizmo_interaction_->state().dragging_axis : -1;
-
-                world_->raw().each(
-                    [&](flecs::entity e, const Transform& transform, const Renderable& /*r*/) {
-                        float dist = vec3_length(vec3_sub(eye, transform.position));
+                flecs::entity gizmo_entity = gizmo_target_entity;
+                if (gizmo_entity.is_valid()) {
+                    const auto* gt = gizmo_entity.get<Transform>();
+                    if (gt != nullptr) {
+                        Vec3 eye = camera_->eye_position();
+                        float dist = vec3_length(vec3_sub(eye, gt->position));
                         float s = dist * std::tan(camera_->fov() / 2.0f) * gizmo::SCREEN_RATIO;
-                        // Only highlight the entity being interacted with
-                        bool is_target = gizmo_target_entity.is_valid() && e == gizmo_target_entity;
-                        int eh = is_target ? hovered : -1;
-                        int ed = is_target ? dragging : -1;
+                        int hovered =
+                            gizmo_interaction_ ? gizmo_interaction_->state().hovered_axis : -1;
+                        int dragging =
+                            gizmo_interaction_ ? gizmo_interaction_->state().dragging_axis : -1;
                         gizmo_renderer_->draw(
-                            transform.position, *camera_, renderer_->render_pass(), s, eh, ed);
-                    });
+                            gt->position, *camera_, renderer_->render_pass(), s, hovered, dragging);
+                    }
+                }
             }
 
             editor_->render(renderer_->render_pass());

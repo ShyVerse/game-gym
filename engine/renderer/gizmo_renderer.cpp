@@ -3,28 +3,15 @@
 #include "renderer/camera.h"
 #include "renderer/gizmo_constants.h"
 #include "renderer/gpu_context.h"
+#include "renderer/shader_utils.h"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <cstdio>
-#include <fstream>
 #include <numbers>
-#include <sstream>
-#include <stdexcept>
 #include <vector>
 
 namespace gg {
-
-static std::string read_shader_file(const std::string& path) {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        throw std::runtime_error("GizmoRenderer: cannot open shader: " + path);
-    }
-    std::ostringstream ss;
-    ss << file.rdbuf();
-    return ss.str();
-}
 
 struct GizmoVertex {
     float position[3];
