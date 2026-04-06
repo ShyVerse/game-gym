@@ -4,10 +4,13 @@
 #include "renderer/gpu_context.h"
 
 #include <array>
+#include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <numbers>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 namespace gg {
 
@@ -26,8 +29,70 @@ struct GizmoVertex {
     float color[3];
 };
 
-static constexpr float AXIS_LENGTH = 1.5f;
-static constexpr uint32_t VERTEX_COUNT = 6; // 3 axes * 2 endpoints
+static constexpr float SHAFT_LENGTH = 1.2f;
+static constexpr float CONE_LENGTH = 0.3f;
+static constexpr float SHAFT_RADIUS = 0.025f;
+static constexpr float CONE_RADIUS = 0.07f;
+static constexpr int SEGMENTS = 8;
+// Per axis: shaft (SEGMENTS * 6) + cone (SEGMENTS * 3) = 8*6 + 8*3 = 72
+// 3 axes: 216 vertices
+static constexpr uint32_t VERTS_PER_AXIS = SEGMENTS * 6 + SEGMENTS * 3;
+static constexpr uint32_t VERTEX_COUNT = VERTS_PER_AXIS * 3;
+
+/// Generate arrow vertices along a given axis direction.
+/// axis: 0=X, 1=Y, 2=Z
+static void build_arrow(
+    std::vector<GizmoVertex>& out, float px, float py, float pz, int axis, const float color[3]) {
+    // Two perpendicular directions to the arrow axis
+    // axis=0(X): perp1=Y, perp2=Z
+    // axis=1(Y): perp1=Z, perp2=X
+    // axis=2(Z): perp1=X, perp2=Y
+    auto make_point = [&](float along, float r1, float r2) -> GizmoVertex {
+        float pos[3] = {px, py, pz};
+        int p1 = (axis + 1) % 3;
+        int p2 = (axis + 2) % 3;
+        pos[axis] += along;
+        pos[p1] += r1;
+        pos[p2] += r2;
+        return {{pos[0], pos[1], pos[2]}, {color[0], color[1], color[2]}};
+    };
+
+    constexpr float tau = 2.0f * std::numbers::pi_v<float>;
+
+    // Shaft: cylinder from 0 to SHAFT_LENGTH
+    for (int i = 0; i < SEGMENTS; ++i) {
+        float a0 = tau * float(i) / float(SEGMENTS);
+        float a1 = tau * float(i + 1) / float(SEGMENTS);
+        float c0 = std::cos(a0) * SHAFT_RADIUS;
+        float s0 = std::sin(a0) * SHAFT_RADIUS;
+        float c1 = std::cos(a1) * SHAFT_RADIUS;
+        float s1 = std::sin(a1) * SHAFT_RADIUS;
+
+        // Two triangles per quad
+        out.push_back(make_point(0.0f, c0, s0));
+        out.push_back(make_point(SHAFT_LENGTH, c0, s0));
+        out.push_back(make_point(SHAFT_LENGTH, c1, s1));
+
+        out.push_back(make_point(0.0f, c0, s0));
+        out.push_back(make_point(SHAFT_LENGTH, c1, s1));
+        out.push_back(make_point(0.0f, c1, s1));
+    }
+
+    // Cone: from SHAFT_LENGTH to SHAFT_LENGTH + CONE_LENGTH
+    float tip = SHAFT_LENGTH + CONE_LENGTH;
+    for (int i = 0; i < SEGMENTS; ++i) {
+        float a0 = tau * float(i) / float(SEGMENTS);
+        float a1 = tau * float(i + 1) / float(SEGMENTS);
+        float c0 = std::cos(a0) * CONE_RADIUS;
+        float s0 = std::sin(a0) * CONE_RADIUS;
+        float c1 = std::cos(a1) * CONE_RADIUS;
+        float s1 = std::sin(a1) * CONE_RADIUS;
+
+        out.push_back(make_point(SHAFT_LENGTH, c0, s0));
+        out.push_back(make_point(tip, 0.0f, 0.0f));
+        out.push_back(make_point(SHAFT_LENGTH, c1, s1));
+    }
+}
 
 std::unique_ptr<GizmoRenderer> GizmoRenderer::create(GpuContext& ctx) {
     auto gr = std::unique_ptr<GizmoRenderer>(new GizmoRenderer(ctx));
@@ -109,10 +174,10 @@ std::unique_ptr<GizmoRenderer> GizmoRenderer::create(GpuContext& ctx) {
     fragment.targetCount = 1;
     fragment.targets = &color_target;
 
-    // Line list topology
+    // Triangle list topology (3D arrow geometry)
     WGPUPrimitiveState primitive{};
     primitive.nextInChain = nullptr;
-    primitive.topology = WGPUPrimitiveTopology_LineList;
+    primitive.topology = WGPUPrimitiveTopology_TriangleList;
     primitive.stripIndexFormat = WGPUIndexFormat_Undefined;
     primitive.frontFace = WGPUFrontFace_CCW;
     primitive.cullMode = WGPUCullMode_None;
@@ -205,18 +270,16 @@ void GizmoRenderer::draw(const Vec3& position, const Camera& camera, WGPURenderP
     const float py = position.y;
     const float pz = position.z;
 
-    // Build axis lines: origin → +axis
-    std::array<GizmoVertex, VERTEX_COUNT> vertices = {{
-        // X axis (red)
-        {{px, py, pz}, {1.0f, 0.2f, 0.2f}},
-        {{px + AXIS_LENGTH, py, pz}, {1.0f, 0.2f, 0.2f}},
-        // Y axis (green)
-        {{px, py, pz}, {0.2f, 1.0f, 0.2f}},
-        {{px, py + AXIS_LENGTH, pz}, {0.2f, 1.0f, 0.2f}},
-        // Z axis (blue)
-        {{px, py, pz}, {0.3f, 0.3f, 1.0f}},
-        {{px, py, pz + AXIS_LENGTH}, {0.3f, 0.3f, 1.0f}},
-    }};
+    std::vector<GizmoVertex> vertices;
+    vertices.reserve(VERTEX_COUNT);
+
+    const float red[3] = {0.9f, 0.2f, 0.2f};
+    const float green[3] = {0.2f, 0.9f, 0.2f};
+    const float blue[3] = {0.3f, 0.3f, 1.0f};
+
+    build_arrow(vertices, px, py, pz, 0, red);   // X
+    build_arrow(vertices, px, py, pz, 1, green); // Y
+    build_arrow(vertices, px, py, pz, 2, blue);  // Z
 
     wgpuQueueWriteBuffer(
         ctx_.queue(), vertex_buffer_, 0, vertices.data(), vertices.size() * sizeof(GizmoVertex));
@@ -227,7 +290,7 @@ void GizmoRenderer::draw(const Vec3& position, const Camera& camera, WGPURenderP
     wgpuRenderPassEncoderSetPipeline(pass, pipeline_);
     wgpuRenderPassEncoderSetBindGroup(pass, 0, bind_group_, 0, nullptr);
     wgpuRenderPassEncoderSetVertexBuffer(pass, 0, vertex_buffer_, 0, WGPU_WHOLE_SIZE);
-    wgpuRenderPassEncoderDraw(pass, VERTEX_COUNT, 1, 0, 0);
+    wgpuRenderPassEncoderDraw(pass, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 }
 
 } // namespace gg
