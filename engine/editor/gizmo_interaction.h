@@ -17,7 +17,7 @@ struct GizmoState {
 class GizmoInteraction {
 public:
     static std::unique_ptr<GizmoInteraction> create();
-    ~GizmoInteraction();
+    ~GizmoInteraction() = default;
 
     GizmoInteraction(const GizmoInteraction&) = delete;
     GizmoInteraction& operator=(const GizmoInteraction&) = delete;

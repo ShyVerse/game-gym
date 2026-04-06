@@ -384,7 +384,8 @@ void Engine::run() {
         }
 
         if (renderer_->begin_frame()) {
-            if (mesh_renderer_ && camera_ && !mesh_assets_.empty()) {
+            if (mesh_renderer_ && camera_ &&
+                !mesh_assets_.empty()) { // NOLINT(bugprone-branch-clone)
                 mesh_renderer_->update_camera(*camera_);
                 world_->raw().each([&](flecs::entity /*entity*/,
                                        const Transform& transform,
