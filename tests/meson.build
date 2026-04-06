@@ -122,6 +122,12 @@ if get_option('enable_tests')
   )
   test('mat4_inverse', test_mat4_inverse)
 
+  test_ray = executable('test_ray',
+    'test_ray.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('ray', test_ray)
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',
