@@ -3,6 +3,7 @@
 #include "renderer/camera.h"
 #include "renderer/gpu_context.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -42,7 +43,13 @@ static constexpr uint32_t VERTEX_COUNT = VERTS_PER_AXIS * 3;
 /// Generate arrow vertices along a given axis direction.
 /// axis: 0=X, 1=Y, 2=Z
 static void build_arrow(
-    std::vector<GizmoVertex>& out, float px, float py, float pz, int axis, const float color[3]) {
+    std::vector<GizmoVertex>& out, float px, float py, float pz,
+    int axis, const float color[3], float scale) {
+    float shaft_length = SHAFT_LENGTH * scale;
+    float cone_length = CONE_LENGTH * scale;
+    float shaft_radius = SHAFT_RADIUS * scale;
+    float cone_radius = CONE_RADIUS * scale;
+
     // Two perpendicular directions to the arrow axis
     // axis=0(X): perp1=Y, perp2=Z
     // axis=1(Y): perp1=Z, perp2=X
@@ -59,38 +66,38 @@ static void build_arrow(
 
     constexpr float tau = 2.0f * std::numbers::pi_v<float>;
 
-    // Shaft: cylinder from 0 to SHAFT_LENGTH
+    // Shaft: cylinder from 0 to shaft_length
     for (int i = 0; i < SEGMENTS; ++i) {
         float a0 = tau * float(i) / float(SEGMENTS);
         float a1 = tau * float(i + 1) / float(SEGMENTS);
-        float c0 = std::cos(a0) * SHAFT_RADIUS;
-        float s0 = std::sin(a0) * SHAFT_RADIUS;
-        float c1 = std::cos(a1) * SHAFT_RADIUS;
-        float s1 = std::sin(a1) * SHAFT_RADIUS;
+        float c0 = std::cos(a0) * shaft_radius;
+        float s0 = std::sin(a0) * shaft_radius;
+        float c1 = std::cos(a1) * shaft_radius;
+        float s1 = std::sin(a1) * shaft_radius;
 
         // Two triangles per quad
         out.push_back(make_point(0.0f, c0, s0));
-        out.push_back(make_point(SHAFT_LENGTH, c0, s0));
-        out.push_back(make_point(SHAFT_LENGTH, c1, s1));
+        out.push_back(make_point(shaft_length, c0, s0));
+        out.push_back(make_point(shaft_length, c1, s1));
 
         out.push_back(make_point(0.0f, c0, s0));
-        out.push_back(make_point(SHAFT_LENGTH, c1, s1));
+        out.push_back(make_point(shaft_length, c1, s1));
         out.push_back(make_point(0.0f, c1, s1));
     }
 
-    // Cone: from SHAFT_LENGTH to SHAFT_LENGTH + CONE_LENGTH
-    float tip = SHAFT_LENGTH + CONE_LENGTH;
+    // Cone: from shaft_length to shaft_length + cone_length
+    float tip = shaft_length + cone_length;
     for (int i = 0; i < SEGMENTS; ++i) {
         float a0 = tau * float(i) / float(SEGMENTS);
         float a1 = tau * float(i + 1) / float(SEGMENTS);
-        float c0 = std::cos(a0) * CONE_RADIUS;
-        float s0 = std::sin(a0) * CONE_RADIUS;
-        float c1 = std::cos(a1) * CONE_RADIUS;
-        float s1 = std::sin(a1) * CONE_RADIUS;
+        float c0 = std::cos(a0) * cone_radius;
+        float s0 = std::sin(a0) * cone_radius;
+        float c1 = std::cos(a1) * cone_radius;
+        float s1 = std::sin(a1) * cone_radius;
 
-        out.push_back(make_point(SHAFT_LENGTH, c0, s0));
+        out.push_back(make_point(shaft_length, c0, s0));
         out.push_back(make_point(tip, 0.0f, 0.0f));
-        out.push_back(make_point(SHAFT_LENGTH, c1, s1));
+        out.push_back(make_point(shaft_length, c1, s1));
     }
 }
 
@@ -265,7 +272,8 @@ GizmoRenderer::~GizmoRenderer() {
     }
 }
 
-void GizmoRenderer::draw(const Vec3& position, const Camera& camera, WGPURenderPassEncoder pass) {
+void GizmoRenderer::draw(const Vec3& position, const Camera& camera, WGPURenderPassEncoder pass,
+                          float scale, int hovered_axis, int dragging_axis) {
     const float px = position.x;
     const float py = position.y;
     const float pz = position.z;
@@ -273,13 +281,38 @@ void GizmoRenderer::draw(const Vec3& position, const Camera& camera, WGPURenderP
     std::vector<GizmoVertex> vertices;
     vertices.reserve(VERTEX_COUNT);
 
-    const float red[3] = {0.9f, 0.2f, 0.2f};
-    const float green[3] = {0.2f, 0.9f, 0.2f};
-    const float blue[3] = {0.3f, 0.3f, 1.0f};
+    const float base_colors[3][3] = {
+        {0.9f, 0.2f, 0.2f},  // X red
+        {0.2f, 0.9f, 0.2f},  // Y green
+        {0.3f, 0.3f, 1.0f},  // Z blue
+    };
+    const float drag_color[3] = {1.0f, 1.0f, 0.3f};
+    const float dim_factor = 0.4f;
+    const float hover_boost = 0.15f;
 
-    build_arrow(vertices, px, py, pz, 0, red);   // X
-    build_arrow(vertices, px, py, pz, 1, green); // Y
-    build_arrow(vertices, px, py, pz, 2, blue);  // Z
+    for (int axis = 0; axis < 3; ++axis) {
+        float color[3];
+        if (dragging_axis >= 0) {
+            if (axis == dragging_axis) {
+                color[0] = drag_color[0];
+                color[1] = drag_color[1];
+                color[2] = drag_color[2];
+            } else {
+                color[0] = base_colors[axis][0] * dim_factor;
+                color[1] = base_colors[axis][1] * dim_factor;
+                color[2] = base_colors[axis][2] * dim_factor;
+            }
+        } else if (axis == hovered_axis) {
+            color[0] = std::min(base_colors[axis][0] + hover_boost, 1.0f);
+            color[1] = std::min(base_colors[axis][1] + hover_boost, 1.0f);
+            color[2] = std::min(base_colors[axis][2] + hover_boost, 1.0f);
+        } else {
+            color[0] = base_colors[axis][0];
+            color[1] = base_colors[axis][1];
+            color[2] = base_colors[axis][2];
+        }
+        build_arrow(vertices, px, py, pz, axis, color, scale);
+    }
 
     wgpuQueueWriteBuffer(
         ctx_.queue(), vertex_buffer_, 0, vertices.data(), vertices.size() * sizeof(GizmoVertex));
