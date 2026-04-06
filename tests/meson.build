@@ -116,6 +116,12 @@ if get_option('enable_tests')
   )
   test('vec3', test_vec3)
 
+  test_mat4_inverse = executable('test_mat4_inverse',
+    'test_mat4_inverse.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('mat4_inverse', test_mat4_inverse)
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',
