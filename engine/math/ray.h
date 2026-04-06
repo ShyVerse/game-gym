@@ -14,9 +14,8 @@ struct Ray {
     Vec3 direction; // normalized
 };
 
-inline Ray ray_from_screen(float screen_x, float screen_y,
-                           uint32_t fb_width, uint32_t fb_height,
-                           const Mat4& inverse_vp) {
+inline Ray ray_from_screen(
+    float screen_x, float screen_y, uint32_t fb_width, uint32_t fb_height, const Mat4& inverse_vp) {
     float ndc_x = (2.0f * screen_x / float(fb_width)) - 1.0f;
     float ndc_y = 1.0f - (2.0f * screen_y / float(fb_height));
 
@@ -30,8 +29,8 @@ inline Ray ray_from_screen(float screen_x, float screen_y,
     return {near_world, dir};
 }
 
-inline float ray_axis_distance(const Ray& ray, const Vec3& axis_origin,
-                               const Vec3& axis_dir, float& out_t) {
+inline float
+ray_axis_distance(const Ray& ray, const Vec3& axis_origin, const Vec3& axis_dir, float& out_t) {
     Vec3 w0 = vec3_sub(ray.origin, axis_origin);
     float a = vec3_dot(ray.direction, ray.direction);
     float b = vec3_dot(ray.direction, axis_dir);
@@ -59,6 +58,22 @@ inline float ray_axis_distance(const Ray& ray, const Vec3& axis_origin,
     Vec3 p2 = vec3_add(axis_origin, vec3_scale(axis_dir, out_t));
 
     return vec3_length(vec3_sub(p1, p2));
+}
+
+/// Intersect ray with a plane defined by a point and normal.
+/// Returns true if intersection exists (ray not parallel to plane).
+/// out_t: parameter along ray, hit_point = ray.origin + ray.direction * out_t
+inline bool ray_plane_intersect(const Ray& ray,
+                                const Vec3& plane_point,
+                                const Vec3& plane_normal,
+                                float& out_t) {
+    float denom = vec3_dot(plane_normal, ray.direction);
+    if (std::abs(denom) < 1e-8f) {
+        return false; // parallel
+    }
+    Vec3 to_plane = vec3_sub(plane_point, ray.origin);
+    out_t = vec3_dot(to_plane, plane_normal) / denom;
+    return out_t >= 0.0f;
 }
 
 } // namespace gg
