@@ -248,7 +248,8 @@ void Engine::run() {
 
         float mx = window_->mouse_x();
         float my = window_->mouse_y();
-        bool mouse_down = window_->mouse_button(0);
+        bool left_down = window_->mouse_button(0);
+        bool right_down = window_->mouse_button(1);
         static float last_mx = 0.0f;
         static float last_my = 0.0f;
         static flecs::entity gizmo_target_entity;
@@ -301,7 +302,7 @@ void Engine::run() {
                 float gizmo_scale = cam_dist * std::tan(camera_->fov() / 2.0f) * GIZMO_SCREEN_RATIO;
                 gizmo_interaction_->update(mx,
                                            my,
-                                           mouse_down,
+                                           left_down,
                                            window_->framebuffer_width(),
                                            window_->framebuffer_height(),
                                            *camera_,
@@ -338,16 +339,11 @@ void Engine::run() {
             }
         }
 
-        // Camera orbit (skip while dragging gizmo)
-        bool is_dragging_gizmo =
-            gizmo_interaction_ && gizmo_interaction_->state().dragging_axis >= 0;
-        if (camera_ && !is_dragging_gizmo) {
-            if (mouse_down) {
+        // Camera orbit (right mouse button)
+        if (camera_) {
+            if (right_down) {
                 camera_->orbit(mx - last_mx, my - last_my);
             }
-            camera_->zoom(window_->scroll_delta_y());
-            window_->reset_scroll();
-        } else if (camera_) {
             camera_->zoom(window_->scroll_delta_y());
             window_->reset_scroll();
         }
