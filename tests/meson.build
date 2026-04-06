@@ -134,6 +134,12 @@ if get_option('enable_tests')
   )
   test('gizmo_interaction', test_gizmo_interaction)
 
+  test_shader_utils = executable('test_shader_utils',
+    'test_shader_utils.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('shader_utils', test_shader_utils)
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',
