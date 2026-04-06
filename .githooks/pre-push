@@ -20,8 +20,8 @@ git diff --name-only HEAD~1 -- '*.cpp' '*.h' | xargs -r clang-format --dry-run -
 echo "pre-push: running clang-tidy on changed files..."
 TIDY_FILES=$(git diff --name-only HEAD~1 -- 'engine/*.cpp' | grep -v 'engine/script/' || true)
 if [ -n "$TIDY_FILES" ]; then
-  CLANG_TIDY="$(brew --prefix llvm@18)/bin/clang-tidy"
-  echo "$TIDY_FILES" | xargs "$CLANG_TIDY" -p builddir
+  CLANG_TIDY="$(brew --prefix llvm)/bin/clang-tidy"
+  echo "$TIDY_FILES" | xargs "$CLANG_TIDY" -p builddir --header-filter='^$'
 fi
 
 echo "pre-push: running build check..."

@@ -11,7 +11,7 @@ std::unique_ptr<Camera> Camera::create() {
 
 void Camera::orbit(float dx, float dy) {
     constexpr float sensitivity = 0.01f;
-    yaw_ += dx * sensitivity;
+    yaw_ -= dx * sensitivity;
     pitch_ += dy * sensitivity;
     constexpr float max_pitch = 1.5f;
     pitch_ = std::clamp(pitch_, -max_pitch, max_pitch);

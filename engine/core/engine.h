@@ -17,6 +17,8 @@ class McpTransport;
 class Camera;
 class Mesh;
 class MeshRenderer;
+class GridRenderer;
+class GizmoRenderer;
 
 #ifdef GG_ENABLE_SCRIPTS
 class ScriptEngine;
@@ -74,6 +76,8 @@ private:
 
     std::unique_ptr<Camera> camera_;
     std::unique_ptr<MeshRenderer> mesh_renderer_;
+    std::unique_ptr<GridRenderer> grid_renderer_;
+    std::unique_ptr<GizmoRenderer> gizmo_renderer_;
     std::vector<std::unique_ptr<Mesh>> meshes_;
     std::unordered_map<std::string, std::vector<std::unique_ptr<Mesh>>> mesh_assets_;
     std::string active_project_path_;

@@ -147,14 +147,27 @@ std::string ecs_set_transform(World& world, const std::string& args_json) {
         }
 
         const auto name = args[0].get<std::string>();
-        const auto new_transform = st::transform_from_json(args[1]);
-
         auto entity = find_entity_by_name(world.raw(), name);
         if (!entity.is_valid()) {
             return make_error("entity not found: " + name);
         }
 
-        entity.set<Transform>(new_transform);
+        // Merge with existing transform — only overwrite fields present in JSON
+        const auto& t_json = args[1];
+        const auto* existing = entity.get<Transform>();
+        Transform updated = existing ? *existing : Transform{};
+
+        if (t_json.contains("position")) {
+            updated.position = st::vec3_from_json(t_json["position"]);
+        }
+        if (t_json.contains("rotation")) {
+            updated.rotation = st::quat_from_json(t_json["rotation"]);
+        }
+        if (t_json.contains("scale")) {
+            updated.scale = st::vec3_from_json(t_json["scale"]);
+        }
+
+        entity.set<Transform>(updated);
 
         // If entity has a RigidBody, mark it for physics sync
         const auto* rb = entity.get<RigidBody>();

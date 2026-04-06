@@ -1,19 +1,24 @@
 /// <reference path="../../typings/engine.d.ts" />
 
-function onInit(): void {
-    const existing: EntityInfo | null = world.getEntity("script_boot_marker");
-    if (existing !== null) {
-        return;
-    }
+let angle = 0;
 
-    world.createEntity("script_boot_marker");
-    world.setTransform("script_boot_marker", {
-        position: { x: 0, y: 1.5, z: 0 },
+function onInit(): void {
+    const existing: EntityInfo | null = world.getEntity("test_cube");
+    if (existing !== null) {
+        world.setTransform("test_cube", {
+            position: { x: 0, y: 0, z: 0 },
+        });
+    }
+}
+
+function onUpdate(dt: number): void {
+    angle += dt * 1.0;
+    const s = Math.sin(angle * 0.5);
+    const c = Math.cos(angle * 0.5);
+
+    world.setTransform("test_cube", {
+        rotation: { x: 0, y: s, z: 0, w: c },
     });
 }
 
-function onUpdate(_dt: number): void {}
-
-function onDestroy(): void {
-    world.destroyEntity("script_boot_marker");
-}
+function onDestroy(): void {}
