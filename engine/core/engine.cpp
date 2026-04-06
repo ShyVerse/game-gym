@@ -10,8 +10,10 @@
 #include "physics/physics_world.h"
 #include "project/project_config.h"
 #include "renderer/camera.h"
+#include "renderer/gizmo_renderer.h"
 #include "renderer/gltf_loader.h"
 #include "renderer/gpu_context.h"
+#include "renderer/grid_renderer.h"
 #include "renderer/mesh.h"
 #include "renderer/mesh_renderer.h"
 #include "renderer/renderer.h"
@@ -144,6 +146,8 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
                 engine->mesh_renderer_ = MeshRenderer::create(*engine->gpu_);
                 engine->camera_ = Camera::create();
                 engine->camera_->set_aspect(float(config.width) / float(config.height));
+                engine->grid_renderer_ = GridRenderer::create(*engine->gpu_);
+                engine->gizmo_renderer_ = GizmoRenderer::create(*engine->gpu_);
                 engine->boot_status_text_ = "Startup scene loaded from project file.";
             } else {
                 engine->boot_status_text_ =
@@ -158,6 +162,8 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
             engine->mesh_renderer_ = MeshRenderer::create(*engine->gpu_);
             engine->camera_ = Camera::create();
             engine->camera_->set_aspect(float(config.width) / float(config.height));
+            engine->grid_renderer_ = GridRenderer::create(*engine->gpu_);
+            engine->gizmo_renderer_ = GizmoRenderer::create(*engine->gpu_);
             engine->boot_status_text_ = "Direct model debug boot.";
         }
     }
@@ -298,6 +304,21 @@ void Engine::run() {
             } else {
                 renderer_->draw_triangle();
             }
+            // Grid overlay
+            if (grid_renderer_ && camera_) {
+                grid_renderer_->update_camera(*camera_);
+                grid_renderer_->draw(renderer_->render_pass());
+            }
+
+            // Gizmo on renderable entities
+            if (gizmo_renderer_ && camera_ && !mesh_assets_.empty()) {
+                world_->raw().each([&](flecs::entity /*e*/,
+                                       const Transform& transform,
+                                       const Renderable& /*r*/) {
+                    gizmo_renderer_->draw(transform.position, *camera_, renderer_->render_pass());
+                });
+            }
+
             editor_->render(renderer_->render_pass());
             renderer_->end_frame();
         }
