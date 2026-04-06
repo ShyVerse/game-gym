@@ -57,7 +57,7 @@ std::unique_ptr<MeshRenderer> MeshRenderer::create(GpuContext& ctx) {
         desc.nextInChain = nullptr;
         desc.label = {.data = "camera-uniform-buf", .length = WGPU_STRLEN};
         desc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform;
-        desc.size = 128;
+        desc.size = sizeof(Mat4) * 2;
         desc.mappedAtCreation = false;
         mr->camera_buffer_ = wgpuDeviceCreateBuffer(ctx.device(), &desc);
         if (!mr->camera_buffer_) {
@@ -183,7 +183,7 @@ std::unique_ptr<MeshRenderer> MeshRenderer::create(GpuContext& ctx) {
     bg_entry.binding = 0;
     bg_entry.buffer = mr->camera_buffer_;
     bg_entry.offset = 0;
-    bg_entry.size = 128;
+    bg_entry.size = sizeof(Mat4) * 2;
     bg_entry.sampler = nullptr;
     bg_entry.textureView = nullptr;
 

@@ -26,6 +26,7 @@ struct ScriptManager::Impl {
     struct PendingCompile {
         std::string source_path;
         std::future<std::string> future;
+        bool dirty = false;
     };
 
     ScriptEngine& engine;
@@ -187,21 +188,24 @@ struct ScriptManager::Impl {
     }
 
     void enqueue_compile(const std::string& source_path) {
-        const bool already_pending = std::any_of(
+        auto it = std::find_if(
             pending_compiles.begin(), pending_compiles.end(), [&](const PendingCompile& pending) {
                 return pending.source_path == source_path;
             });
-        if (already_pending) {
+        if (it != pending_compiles.end()) {
+            it->dirty = true;
             return;
         }
 
         pending_compiles.push_back(
-            {.source_path = source_path, .future = std::async(std::launch::async, [source_path] {
-                                             return compile_typescript(source_path);
-                                         })});
+            {.source_path = source_path,
+             .future = std::async(std::launch::async,
+                                  [source_path] { return compile_typescript(source_path); }),
+             .dirty = false});
     }
 
     void drain_completed_compiles(ScriptManager& manager) {
+        std::vector<std::string> requeue;
         auto it = pending_compiles.begin();
         while (it != pending_compiles.end()) {
             const auto status = it->future.wait_for(std::chrono::milliseconds(0));
@@ -214,7 +218,13 @@ struct ScriptManager::Impl {
             if (!js_path.empty()) {
                 manager.reload(js_path);
             }
+            if (it->dirty) {
+                requeue.push_back(std::move(it->source_path));
+            }
             it = pending_compiles.erase(it);
+        }
+        for (const auto& path : requeue) {
+            enqueue_compile(path);
         }
     }
 };
@@ -283,6 +293,8 @@ void ScriptManager::poll_changes() {
 
     impl_->drain_completed_compiles(*this);
     auto changed = impl_->watcher->poll_changes();
+    std::sort(changed.begin(), changed.end());
+    changed.erase(std::unique(changed.begin(), changed.end()), changed.end());
 
     for (const auto& path : changed) {
         fs::path file_path(path);
