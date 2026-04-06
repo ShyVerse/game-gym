@@ -1,5 +1,5 @@
-#include "math/ray.h"
 #include "math/mat4.h"
+#include "math/ray.h"
 #include "math/vec3.h"
 
 #include <cmath>
@@ -8,8 +8,7 @@
 
 TEST(RayTest, ScreenCenterPointsForward) {
     auto v = gg::Mat4::look_at({0, 0, 5}, {0, 0, 0}, {0, 1, 0});
-    auto p = gg::Mat4::perspective(
-        45.0f * std::numbers::pi_v<float> / 180.0f, 1.0f, 0.1f, 100.0f);
+    auto p = gg::Mat4::perspective(45.0f * std::numbers::pi_v<float> / 180.0f, 1.0f, 0.1f, 100.0f);
     auto vp = p * v;
     auto inv_vp = vp.inverse();
 
