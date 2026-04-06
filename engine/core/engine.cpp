@@ -347,7 +347,7 @@ void Engine::run() {
         if (renderer_->begin_frame()) {
             if (mesh_renderer_ && camera_ && !mesh_assets_.empty()) {
                 mesh_renderer_->update_camera(*camera_);
-                world_->raw().each([&](flecs::entity entity,
+                world_->raw().each([&](flecs::entity /*entity*/,
                                        const Transform& transform,
                                        const Renderable& renderable) {
                     auto it = mesh_assets_.find(renderable.mesh_asset_path);
