@@ -6,8 +6,8 @@ namespace gg {
 
 Ray ray_from_screen(
     float screen_x, float screen_y, uint32_t fb_width, uint32_t fb_height, const Mat4& inverse_vp) {
-    float ndc_x = (2.0f * screen_x / float(fb_width)) - 1.0f;
-    float ndc_y = 1.0f - (2.0f * screen_y / float(fb_height));
+    float ndc_x = (2.0f * screen_x / static_cast<float>(fb_width)) - 1.0f;
+    float ndc_y = 1.0f - (2.0f * screen_y / static_cast<float>(fb_height));
 
     Vec3 near_ndc{ndc_x, ndc_y, 0.0f};
     Vec3 far_ndc{ndc_x, ndc_y, 1.0f};
@@ -34,7 +34,7 @@ float ray_axis_distance(const Ray& ray,
     float s;
     if (std::abs(denom) < 1e-8f) {
         s = 0.0f;
-        out_t = e / c;
+        out_t = (c > 1e-8f) ? e / c : 0.0f;
     } else {
         s = (b * e - c * d) / denom;
         out_t = (a * e - b * d) / denom;
@@ -42,7 +42,7 @@ float ray_axis_distance(const Ray& ray,
 
     if (s < 0.0f) {
         s = 0.0f;
-        out_t = e / c;
+        out_t = (c > 1e-8f) ? e / c : 0.0f;
     }
 
     Vec3 p1 = vec3_add(ray.origin, vec3_scale(ray.direction, s));

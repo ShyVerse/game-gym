@@ -6,7 +6,7 @@
 
 TEST(ShaderUtilsTest, ReadExistingShaderFile) {
     // Write a temp shader file
-    const char* path = "/tmp/test_shader.wgsl";
+    const char* path = "test_shader_temp.wgsl";
     {
         std::ofstream f(path);
         f << "@vertex fn vs_main() -> @builtin(position) vec4f { return vec4f(0); }";
