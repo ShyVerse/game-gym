@@ -11,9 +11,9 @@
 #include <cstdio>
 #include <flecs.h>
 #include <imgui.h>
-#include <imgui_internal.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_wgpu.h>
+#include <imgui_internal.h>
 
 namespace gg {
 
@@ -90,8 +90,7 @@ void EditorUI::draw_panels(World& world,
         first_frame_ = false;
 
         ImGui::DockBuilderRemoveNode(dockspace_id);
-        ImGui::DockBuilderAddNode(dockspace_id,
-                                  ImGuiDockNodeFlags_DockSpace | dock_flags);
+        ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace | dock_flags);
 
         ImVec2 viewport_size = ImGui::GetMainViewport()->Size;
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport_size);
@@ -99,26 +98,24 @@ void EditorUI::draw_panels(World& world,
         // Split left: Hierarchy (18%)
         ImGuiID dock_left = 0;
         ImGuiID dock_center = 0;
-        ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.18f,
-                                    &dock_left, &dock_center);
+        ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.18f, &dock_left, &dock_center);
 
         // Split right from center: Inspector (24% of remaining)
         ImGuiID dock_right = 0;
         ImGuiID dock_viewport = 0;
-        ImGui::DockBuilderSplitNode(dock_center, ImGuiDir_Right, 0.24f,
-                                    &dock_right, &dock_viewport);
+        ImGui::DockBuilderSplitNode(
+            dock_center, ImGuiDir_Right, 0.24f, &dock_right, &dock_viewport);
 
         // Split bottom from viewport: Stats/Scene (25% of remaining)
         ImGuiID dock_bottom = 0;
         ImGuiID dock_main = 0;
-        ImGui::DockBuilderSplitNode(dock_viewport, ImGuiDir_Down, 0.25f,
-                                    &dock_bottom, &dock_main);
+        ImGui::DockBuilderSplitNode(dock_viewport, ImGuiDir_Down, 0.25f, &dock_bottom, &dock_main);
 
         // Dock windows by name
         ImGui::DockBuilderDockWindow("Hierarchy", dock_left);
         ImGui::DockBuilderDockWindow("Inspector", dock_right);
         ImGui::DockBuilderDockWindow("Stats", dock_bottom);
-        ImGui::DockBuilderDockWindow("Scene", dock_bottom);  // tabs with Stats
+        ImGui::DockBuilderDockWindow("Scene", dock_bottom); // tabs with Stats
 
         ImGui::DockBuilderFinish(dockspace_id);
     }
