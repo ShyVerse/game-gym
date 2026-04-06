@@ -10,6 +10,7 @@
 namespace gg {
 
 static constexpr float HIT_THRESHOLD_FACTOR = 0.15f;
+static constexpr float ARROW_TOTAL_LENGTH = 1.5f; // SHAFT_LENGTH(1.2) + CONE_LENGTH(0.3)
 
 static constexpr std::array<Vec3, 3> AXIS_DIRS = {{
     {1.0f, 0.0f, 0.0f},
@@ -62,7 +63,7 @@ void GizmoInteraction::update(float mouse_x, float mouse_y, bool mouse_down,
         float t = 0.0f;
         float dist = ray_axis_distance(ray, gizmo_position, AXIS_DIRS[i], t);
 
-        float arrow_len = 1.5f * gizmo_scale;
+        float arrow_len = ARROW_TOTAL_LENGTH * gizmo_scale;
         if (t < 0.0f || t > arrow_len) {
             continue;
         }
