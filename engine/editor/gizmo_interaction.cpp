@@ -22,7 +22,6 @@ std::unique_ptr<GizmoInteraction> GizmoInteraction::create() {
     return std::unique_ptr<GizmoInteraction>(new GizmoInteraction());
 }
 
-
 void GizmoInteraction::update(float mouse_x,
                               float mouse_y,
                               bool mouse_down,
