@@ -1,6 +1,8 @@
 #pragma once
 #include "mcp/mcp_transport.h"
 
+#include <httplib.h>
+
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
@@ -53,6 +55,8 @@ private:
     std::unordered_map<std::string, std::shared_ptr<SseClient>> clients_;
 
     uint64_t next_session_id_{1};
+
+    std::unique_ptr<httplib::Server> server_;
 };
 
 } // namespace gg

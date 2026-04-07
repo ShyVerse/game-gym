@@ -49,10 +49,10 @@ void McpSseTransport::stop() {
         }
     }
 
-    // Make a dummy request to unblock the server's listen()
-    httplib::Client cli("localhost", port_);
-    cli.set_connection_timeout(1);
-    cli.Get("/health");
+    // Stop the httplib server so listen() returns
+    if (server_) {
+        server_->stop();
+    }
 
     if (server_thread_.joinable()) {
         server_thread_.join();
@@ -85,7 +85,8 @@ void McpSseTransport::send_response(const std::string& session_id,
 }
 
 void McpSseTransport::server_thread_func() {
-    httplib::Server svr;
+    server_ = std::make_unique<httplib::Server>();
+    auto& svr = *server_;
 
     // Health check
     svr.Get("/health", [this](const httplib::Request&, httplib::Response& res) {
