@@ -81,9 +81,8 @@ TEST_F(McpStreamableTest, HealthCheck) {
 
 TEST_F(McpStreamableTest, InitializeReturnsInlineJson) {
     httplib::Client cli("localhost", TEST_PORT);
-    auto res = cli.Post("/mcp",
-                        R"({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})",
-                        "application/json");
+    auto res = cli.Post(
+        "/", R"({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})", "application/json");
 
     ASSERT_NE(res, nullptr);
     EXPECT_EQ(res->status, 200);
@@ -99,9 +98,8 @@ TEST_F(McpStreamableTest, InitializeReturnsInlineJson) {
 
 TEST_F(McpStreamableTest, ToolsListReturnsInline) {
     httplib::Client cli("localhost", TEST_PORT);
-    auto res = cli.Post("/mcp",
-                        R"({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}})",
-                        "application/json");
+    auto res = cli.Post(
+        "/", R"({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}})", "application/json");
 
     ASSERT_NE(res, nullptr);
     EXPECT_EQ(res->status, 200);
@@ -113,9 +111,8 @@ TEST_F(McpStreamableTest, ToolsListReturnsInline) {
 
 TEST_F(McpStreamableTest, UnknownMethodReturnsError) {
     httplib::Client cli("localhost", TEST_PORT);
-    auto res = cli.Post("/mcp",
-                        R"({"jsonrpc":"2.0","id":3,"method":"nonexistent","params":{}})",
-                        "application/json");
+    auto res = cli.Post(
+        "/", R"({"jsonrpc":"2.0","id":3,"method":"nonexistent","params":{}})", "application/json");
 
     ASSERT_NE(res, nullptr);
     EXPECT_EQ(res->status, 200);
@@ -129,7 +126,7 @@ TEST_F(McpStreamableTest, NotificationReturns202) {
     httplib::Client cli("localhost", TEST_PORT);
     // notifications/initialized has no "id" field
     auto res = cli.Post(
-        "/mcp", R"({"jsonrpc":"2.0","method":"notifications/initialized"})", "application/json");
+        "/", R"({"jsonrpc":"2.0","method":"notifications/initialized"})", "application/json");
 
     ASSERT_NE(res, nullptr);
     EXPECT_EQ(res->status, 202);
@@ -137,7 +134,7 @@ TEST_F(McpStreamableTest, NotificationReturns202) {
 
 TEST_F(McpStreamableTest, InvalidJsonReturnsParseError) {
     httplib::Client cli("localhost", TEST_PORT);
-    auto res = cli.Post("/mcp", "not valid json {{{", "application/json");
+    auto res = cli.Post("/", "not valid json {{{", "application/json");
 
     ASSERT_NE(res, nullptr);
     EXPECT_EQ(res->status, 400);
@@ -178,7 +175,7 @@ TEST_F(McpStreamableTest, LegacySseRedirects) {
 
     ASSERT_NE(res, nullptr);
     EXPECT_EQ(res->status, 301);
-    EXPECT_EQ(res->get_header_value("Location"), "/mcp");
+    EXPECT_EQ(res->get_header_value("Location"), "/");
 }
 
 TEST_F(McpStreamableTest, LegacyMessageRedirects) {
@@ -188,5 +185,5 @@ TEST_F(McpStreamableTest, LegacyMessageRedirects) {
 
     ASSERT_NE(res, nullptr);
     EXPECT_EQ(res->status, 301);
-    EXPECT_EQ(res->get_header_value("Location"), "/mcp");
+    EXPECT_EQ(res->get_header_value("Location"), "/");
 }

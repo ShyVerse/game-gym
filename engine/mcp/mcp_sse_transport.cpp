@@ -107,7 +107,7 @@ void McpSseTransport::server_thread_func() {
     });
 
     // MCP Streamable HTTP: GET /mcp — optional server-to-client SSE stream
-    svr.Get("/mcp", [this](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/", [this](const httplib::Request&, httplib::Response& res) {
         std::string session_id;
         auto client = std::make_shared<SseClient>();
 
@@ -160,14 +160,14 @@ void McpSseTransport::server_thread_func() {
             [](bool) {});
     });
 
-    // Legacy SSE endpoint — redirect to /mcp
+    // Legacy endpoints — redirect to /
     svr.Get("/sse", [](const httplib::Request&, httplib::Response& res) {
         res.status = 301;
-        res.set_header("Location", "/mcp");
+        res.set_header("Location", "/");
     });
 
     // MCP Streamable HTTP: POST /mcp — JSON-RPC request handling
-    svr.Post("/mcp", [this](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/", [this](const httplib::Request& req, httplib::Response& res) {
         // Parse to check if it's a notification (no id) or a request (has id)
         nlohmann::json parsed;
         try {
@@ -243,10 +243,17 @@ void McpSseTransport::server_thread_func() {
         res.set_content(response_body, "application/json");
     });
 
-    // Legacy message endpoint — redirect to /mcp
+    svr.Get("/mcp", [](const httplib::Request&, httplib::Response& res) {
+        res.status = 301;
+        res.set_header("Location", "/");
+    });
     svr.Post("/message", [](const httplib::Request&, httplib::Response& res) {
         res.status = 301;
-        res.set_header("Location", "/mcp");
+        res.set_header("Location", "/");
+    });
+    svr.Post("/mcp", [](const httplib::Request&, httplib::Response& res) {
+        res.status = 301;
+        res.set_header("Location", "/");
     });
 
     svr.listen("0.0.0.0", port_);
