@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <cstring>
 #include <fstream>
-#include <optional>
 #include <random>
 #include <sstream>
 #include <stdexcept>
@@ -56,11 +55,11 @@ struct ParticleSystem::Impl {
     ParticleSystemConfig config;
     uint32_t active_count = 0;
 
-    // GPU buffers — optional because GpuBuffer has no default constructor
-    std::optional<GpuBuffer> particle_buf;
-    std::optional<GpuBuffer> params_buf;
-    std::optional<GpuBuffer> grid_counts_buf;
-    std::optional<GpuBuffer> grid_entries_buf;
+    // GPU buffers
+    std::unique_ptr<GpuBuffer> particle_buf;
+    std::unique_ptr<GpuBuffer> params_buf;
+    std::unique_ptr<GpuBuffer> grid_counts_buf;
+    std::unique_ptr<GpuBuffer> grid_entries_buf;
 
     // Pipelines
     std::unique_ptr<ComputePipeline> integrate_pipe;
@@ -83,13 +82,16 @@ std::unique_ptr<ParticleSystem> ParticleSystem::create(GpuContext& gpu,
 
     // Create buffers
     uint64_t particle_bytes = config.max_particles * sizeof(ParticleData);
-    impl.particle_buf.emplace(GpuBuffer::create_storage(device, particle_bytes));
-    impl.params_buf.emplace(GpuBuffer::create_uniform(device, sizeof(GpuSimParams)));
+    impl.particle_buf =
+        std::make_unique<GpuBuffer>(GpuBuffer::create_storage(device, particle_bytes));
+    impl.params_buf =
+        std::make_unique<GpuBuffer>(GpuBuffer::create_uniform(device, sizeof(GpuSimParams)));
 
     uint32_t total_cells = config.grid_resolution * config.grid_resolution * config.grid_resolution;
-    impl.grid_counts_buf.emplace(GpuBuffer::create_storage(device, total_cells * sizeof(uint32_t)));
-    impl.grid_entries_buf.emplace(
-        GpuBuffer::create_storage(device, total_cells * MAX_PER_CELL * sizeof(uint32_t)));
+    impl.grid_counts_buf = std::make_unique<GpuBuffer>(
+        GpuBuffer::create_storage(device, total_cells * sizeof(uint32_t)));
+    impl.grid_entries_buf = std::make_unique<GpuBuffer>(GpuBuffer::create_storage(
+        device, static_cast<uint64_t>(total_cells) * MAX_PER_CELL * sizeof(uint32_t)));
 
     // Create pipelines
     auto integrate_src = load_shader("shaders/particle_integrate.wgsl");
@@ -112,6 +114,7 @@ void ParticleSystem::spawn(uint32_t count, Vec3 center, Vec3 extent, Vec3 veloci
         return;
     }
 
+    // NOLINTNEXTLINE(bugprone-random-generator-seed) deterministic for reproducibility
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
 
