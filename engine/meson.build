@@ -82,14 +82,14 @@ endif
 
 engine_lib = shared_library('game-gym-engine',
   engine_sources,
-  include_directories: [engine_inc, generated_inc, cgltf_inc],
+  include_directories: [engine_inc, generated_inc, cgltf_inc, httplib_inc],
   cpp_args: jolt_client_defines + engine_script_args,
   dependencies: engine_base_deps,
   install: true,
 )
 
 engine_dep = declare_dependency(
-  include_directories: [engine_inc, generated_inc, cgltf_inc],
+  include_directories: [engine_inc, generated_inc, cgltf_inc, httplib_inc],
   link_with: engine_lib,
   dependencies: engine_base_deps,
   compile_args: engine_script_args,

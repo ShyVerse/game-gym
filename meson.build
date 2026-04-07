@@ -153,6 +153,7 @@ endif
 
 generated_inc = include_directories('generated')
 cgltf_inc = include_directories('third_party/cgltf')
+httplib_inc = include_directories('third_party/httplib')
 
 subdir('engine')
 subdir('app')
