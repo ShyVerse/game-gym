@@ -146,6 +146,14 @@ if get_option('enable_tests')
   )
   test('shader_utils', test_shader_utils)
 
+  test_gpu_particle = executable('test_gpu_particle',
+    'test_gpu_particle.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('gpu_particle', test_gpu_particle,
+    workdir: meson.source_root(),
+  )
+
   if enable_scripts
     test_script_engine = executable('test_script_engine',
       'test_script_engine.cpp',
