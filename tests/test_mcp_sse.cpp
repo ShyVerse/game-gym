@@ -28,10 +28,8 @@ protected:
                 gg::McpRequest req = transport_->poll_request();
                 if (!req.body.empty()) {
                     std::string response = server_->handle_message(req.body);
-                    if (req.response_cv) {
-                        std::scoped_lock<std::mutex> lock(*req.response_mutex);
-                        *req.response_out = response;
-                        req.response_cv->notify_one();
+                    if (req.response_promise) {
+                        req.response_promise->set_value(response);
                     } else if (!response.empty()) {
                         transport_->send_response(req.session_id, response);
                     }

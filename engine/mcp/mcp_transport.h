@@ -1,6 +1,6 @@
 #pragma once
-#include <condition_variable>
-#include <mutex>
+#include <future>
+#include <memory>
 #include <string>
 
 namespace gg {
@@ -9,10 +9,8 @@ struct McpRequest {
     std::string session_id;
     std::string body;
 
-    // Synchronous response delivery: main loop writes response here
-    std::mutex* response_mutex = nullptr;
-    std::condition_variable* response_cv = nullptr;
-    std::string* response_out = nullptr;
+    // Synchronous response delivery: shared ownership prevents dangling
+    std::shared_ptr<std::promise<std::string>> response_promise;
 };
 
 class McpTransport {

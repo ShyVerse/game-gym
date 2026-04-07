@@ -8,7 +8,9 @@ namespace gg {
 McpSseTransport::McpSseTransport(uint16_t port) : port_(port) {}
 
 McpSseTransport::~McpSseTransport() {
-    stop();
+    try {
+        stop();
+    } catch (...) {} // NOLINT(bugprone-empty-catch)
 }
 
 std::unique_ptr<McpSseTransport> McpSseTransport::create(uint16_t port) {
@@ -48,13 +50,15 @@ void McpSseTransport::stop() {
         }
     }
 
-    // Wake up any blocked POST handlers
+    // Unblock any pending POST handlers by setting empty responses
     {
         std::scoped_lock<std::mutex> lock(request_mutex_);
         while (!request_queue_.empty()) {
             auto& req = request_queue_.front();
-            if (req.response_cv) {
-                req.response_cv->notify_all();
+            if (req.response_promise) {
+                try {
+                    req.response_promise->set_value("");
+                } catch (...) {} // NOLINT(bugprone-empty-catch)
             }
             request_queue_.pop();
         }
@@ -189,39 +193,44 @@ void McpSseTransport::server_thread_func() {
             auto session_id = req.get_header_value("Mcp-Session-Id");
             {
                 std::scoped_lock<std::mutex> lock(request_mutex_);
-                request_queue_.push({session_id, req.body, nullptr, nullptr, nullptr});
+                request_queue_.push({session_id, req.body, nullptr});
             }
             res.status = 202;
             return;
         }
 
-        // Requests: queue and wait for main loop to process
-        std::mutex response_mutex;
-        std::condition_variable response_cv;
-        std::string response_body;
+        // Requests: queue with shared promise and wait for main loop
+        auto promise = std::make_shared<std::promise<std::string>>();
+        auto future = promise->get_future();
 
         auto session_id = req.get_header_value("Mcp-Session-Id");
 
         {
             std::scoped_lock<std::mutex> lock(request_mutex_);
-            request_queue_.push(
-                {session_id, req.body, &response_mutex, &response_cv, &response_body});
+            request_queue_.push({session_id, req.body, promise});
         }
 
-        // Wait for main loop to fill response_body
-        {
-            std::unique_lock<std::mutex> lock(response_mutex);
-            response_cv.wait_for(lock, std::chrono::seconds(30), [&] {
-                return !response_body.empty() || !running_.load();
-            });
+        // Wait for main loop to fulfill the promise
+        auto status = future.wait_for(std::chrono::seconds(30));
+
+        if (status != std::future_status::ready) {
+            res.status = 504;
+            nlohmann::json err;
+            err["jsonrpc"] = "2.0";
+            err["id"] = parsed.value("id", nlohmann::json{});
+            err["error"] = {{"code", -32603}, {"message", "Request timeout"}};
+            res.set_content(err.dump(), "application/json");
+            return;
         }
+
+        std::string response_body = future.get();
 
         if (response_body.empty()) {
             res.status = 504;
             nlohmann::json err;
             err["jsonrpc"] = "2.0";
             err["id"] = parsed.value("id", nlohmann::json{});
-            err["error"] = {{"code", -32603}, {"message", "Request timeout"}};
+            err["error"] = {{"code", -32603}, {"message", "Server shutting down"}};
             res.set_content(err.dump(), "application/json");
             return;
         }
@@ -233,7 +242,6 @@ void McpSseTransport::server_thread_func() {
             {
                 std::scoped_lock<std::mutex> lock(clients_mutex_);
                 new_session_id = std::to_string(next_session_id_++);
-                // Register a client entry for future SSE connections
                 clients_[new_session_id] = std::make_shared<SseClient>();
             }
             res.set_header("Mcp-Session-Id", new_session_id);
