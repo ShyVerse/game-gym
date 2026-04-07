@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -13,7 +14,7 @@ class World;
 class PhysicsWorld;
 class EditorUI;
 class McpServer;
-class McpTransport;
+class McpSseTransport;
 class Camera;
 class Mesh;
 class MeshRenderer;
@@ -37,6 +38,7 @@ struct EngineConfig {
     std::string startup_scene_override = "";
     bool enable_project_boot = false;
     bool enable_mcp = false;
+    uint16_t mcp_port = 9315;
     bool enable_scripts = false;
     std::string script_dir = "assets/scripts";
 };
@@ -73,7 +75,7 @@ private:
     std::unique_ptr<PhysicsWorld> physics_;
     std::unique_ptr<EditorUI> editor_;
     std::unique_ptr<McpServer> mcp_;
-    std::unique_ptr<McpTransport> mcp_transport_;
+    std::unique_ptr<McpSseTransport> mcp_transport_;
 
     std::unique_ptr<Camera> camera_;
     std::unique_ptr<MeshRenderer> mesh_renderer_;

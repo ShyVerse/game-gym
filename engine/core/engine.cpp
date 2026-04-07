@@ -8,7 +8,7 @@
 #include "math/ray.h"
 #include "math/vec3.h"
 #include "mcp/mcp_server.h"
-#include "mcp/mcp_stdio_transport.h"
+#include "mcp/mcp_sse_transport.h"
 #include "mcp/mcp_tools.h"
 #include "physics/physics_world.h"
 #include "project/project_config.h"
@@ -188,7 +188,7 @@ std::unique_ptr<Engine> Engine::create(const EngineConfig& config) {
         engine->mcp_ =
             McpServer::create("game-gym-engine", std::string(build_version::display_version()));
         register_mcp_tools(*engine->mcp_, *engine->world_, *engine->physics_);
-        engine->mcp_transport_ = McpStdioTransport::create();
+        engine->mcp_transport_ = McpSseTransport::create(config.mcp_port);
         engine->mcp_transport_->start();
     }
 
@@ -224,13 +224,13 @@ void Engine::run() {
 
         // MCP: poll and handle incoming requests
         if (mcp_ && mcp_transport_) {
-            std::string request = mcp_transport_->poll_request();
-            while (!request.empty()) {
-                const std::string response = mcp_->handle_message(request);
+            McpRequest mcp_req = mcp_transport_->poll_request();
+            while (!mcp_req.body.empty()) {
+                const std::string response = mcp_->handle_message(mcp_req.body);
                 if (!response.empty()) {
-                    mcp_transport_->send_response(response);
+                    mcp_transport_->send_response(mcp_req.session_id, response);
                 }
-                request = mcp_transport_->poll_request();
+                mcp_req = mcp_transport_->poll_request();
             }
         }
 
