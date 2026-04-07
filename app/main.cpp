@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
     const char* model_path = nullptr;
     std::string project_file;
     std::string startup_scene_override;
+    bool enable_mcp = false;
 
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--version") {
@@ -27,6 +28,8 @@ int main(int argc, char* argv[]) {
             project_file = argv[++i];
         } else if (std::string(argv[i]) == "--scene" && i + 1 < argc) {
             startup_scene_override = argv[++i];
+        } else if (std::string(argv[i]) == "--mcp") {
+            enable_mcp = true;
         } else if (i == 1 && argv[i][0] != '-') {
             // Legacy positional argument: first arg is shader path
             shader_path = argv[i];
@@ -51,6 +54,7 @@ int main(int argc, char* argv[]) {
             .project_file = project_file,
             .startup_scene_override = startup_scene_override,
             .enable_project_boot = use_project_boot || !startup_scene_override.empty(),
+            .enable_mcp = enable_mcp,
             .enable_scripts = use_project_boot || !startup_scene_override.empty(),
         });
         engine->run();
