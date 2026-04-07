@@ -46,7 +46,7 @@ engine_sources = files(
   'editor/editor_ui.cpp',
   'mcp/mcp_server.cpp',
   'mcp/mcp_tools.cpp',
-  'mcp/mcp_stdio_transport.cpp',
+  'mcp/mcp_sse_transport.cpp',
 )
 engine_sources += version_header
 
