@@ -227,7 +227,13 @@ void Engine::run() {
             McpRequest mcp_req = mcp_transport_->poll_request();
             while (!mcp_req.body.empty()) {
                 const std::string response = mcp_->handle_message(mcp_req.body);
-                if (!response.empty()) {
+                if (mcp_req.response_cv) {
+                    // Synchronous Streamable HTTP: deliver response to waiting POST handler
+                    std::scoped_lock<std::mutex> lock(*mcp_req.response_mutex);
+                    *mcp_req.response_out = response;
+                    mcp_req.response_cv->notify_one();
+                } else if (!response.empty()) {
+                    // Async SSE push (notifications, legacy)
                     mcp_transport_->send_response(mcp_req.session_id, response);
                 }
                 mcp_req = mcp_transport_->poll_request();

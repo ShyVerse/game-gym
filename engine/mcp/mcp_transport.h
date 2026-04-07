@@ -1,4 +1,6 @@
 #pragma once
+#include <condition_variable>
+#include <mutex>
 #include <string>
 
 namespace gg {
@@ -6,6 +8,11 @@ namespace gg {
 struct McpRequest {
     std::string session_id;
     std::string body;
+
+    // Synchronous response delivery: main loop writes response here
+    std::mutex* response_mutex = nullptr;
+    std::condition_variable* response_cv = nullptr;
+    std::string* response_out = nullptr;
 };
 
 class McpTransport {
