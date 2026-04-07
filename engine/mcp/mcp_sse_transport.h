@@ -1,11 +1,10 @@
 #pragma once
 #include "mcp/mcp_transport.h"
 
-#include <httplib.h>
-
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
+#include <httplib.h>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -26,8 +25,7 @@ public:
     void start() override;
     void stop() override;
     McpRequest poll_request() override;
-    void send_response(const std::string& session_id,
-                       const std::string& response) override;
+    void send_response(const std::string& session_id, const std::string& response) override;
 
     [[nodiscard]] uint16_t port() const;
     [[nodiscard]] size_t client_count() const;

@@ -5,11 +5,11 @@
 #include "mcp/mcp_tools.h"
 #include "physics/physics_world.h"
 
+#include <atomic>
+#include <chrono>
 #include <gtest/gtest.h>
 #include <httplib.h>
 #include <nlohmann/json.hpp>
-#include <atomic>
-#include <chrono>
 #include <string>
 #include <thread>
 
@@ -18,7 +18,7 @@ namespace {
 constexpr uint16_t TEST_PORT = 19315;
 
 class McpSseTest : public ::testing::Test {
-  protected:
+protected:
     void SetUp() override {
         transport_ = gg::McpSseTransport::create(TEST_PORT);
         transport_->start();
@@ -52,9 +52,7 @@ TEST_F(McpSseTest, HealthCheck) {
 TEST_F(McpSseTest, PostWithoutSessionReturns400) {
     httplib::Client cli("localhost", TEST_PORT);
     auto res = cli.Post(
-        "/message",
-        R"({"jsonrpc":"2.0","id":1,"method":"initialize"})",
-        "application/json");
+        "/message", R"({"jsonrpc":"2.0","id":1,"method":"initialize"})", "application/json");
 
     ASSERT_NE(res, nullptr);
     EXPECT_EQ(res->status, 400);
@@ -63,10 +61,10 @@ TEST_F(McpSseTest, PostWithoutSessionReturns400) {
 TEST_F(McpSseTest, PostWithUnknownSessionReturns404) {
     httplib::Client cli("localhost", TEST_PORT);
     httplib::Headers headers = {{"Mcp-Session-Id", "nonexistent"}};
-    auto res = cli.Post(
-        "/message", headers,
-        R"({"jsonrpc":"2.0","id":1,"method":"initialize"})",
-        "application/json");
+    auto res = cli.Post("/message",
+                        headers,
+                        R"({"jsonrpc":"2.0","id":1,"method":"initialize"})",
+                        "application/json");
 
     ASSERT_NE(res, nullptr);
     EXPECT_EQ(res->status, 404);
@@ -84,55 +82,45 @@ TEST_F(McpSseTest, SseConnectionAndMessageRoundtrip) {
         httplib::Client cli("localhost", TEST_PORT);
         cli.set_read_timeout(10);
 
-        cli.Get(
-            "/sse",
-            [&](const char* data, size_t len) -> bool {
-                std::string chunk(data, len);
+        cli.Get("/sse", [&](const char* data, size_t len) -> bool {
+            std::string chunk(data, len);
 
-                // Parse SSE events from chunk
-                if (chunk.find("event: endpoint") != std::string::npos) {
-                    auto data_pos = chunk.find("data: ");
-                    if (data_pos != std::string::npos) {
-                        auto line_end = chunk.find('\n', data_pos);
-                        auto json_str = chunk.substr(
-                            data_pos + 6, line_end - data_pos - 6);
-                        auto j = nlohmann::json::parse(json_str);
-                        {
-                            std::lock_guard<std::mutex> lock(
-                                data_mutex);
-                            session_id =
-                                j["sessionId"].get<std::string>();
-                        }
-                        endpoint_received.store(true);
+            // Parse SSE events from chunk
+            if (chunk.find("event: endpoint") != std::string::npos) {
+                auto data_pos = chunk.find("data: ");
+                if (data_pos != std::string::npos) {
+                    auto line_end = chunk.find('\n', data_pos);
+                    auto json_str = chunk.substr(data_pos + 6, line_end - data_pos - 6);
+                    auto j = nlohmann::json::parse(json_str);
+                    {
+                        std::lock_guard<std::mutex> lock(data_mutex);
+                        session_id = j["sessionId"].get<std::string>();
                     }
+                    endpoint_received.store(true);
                 }
+            }
 
-                if (chunk.find("event: message") != std::string::npos) {
-                    auto data_pos = chunk.find(
-                        "data: ", chunk.find("event: message"));
-                    if (data_pos != std::string::npos) {
-                        auto line_end = chunk.find('\n', data_pos);
-                        {
-                            std::lock_guard<std::mutex> lock(
-                                data_mutex);
-                            received_response = chunk.substr(
-                                data_pos + 6,
-                                line_end - data_pos - 6);
-                        }
-                        message_received.store(true);
-                        return false; // Stop reading
+            if (chunk.find("event: message") != std::string::npos) {
+                auto data_pos = chunk.find("data: ", chunk.find("event: message"));
+                if (data_pos != std::string::npos) {
+                    auto line_end = chunk.find('\n', data_pos);
+                    {
+                        std::lock_guard<std::mutex> lock(data_mutex);
+                        received_response = chunk.substr(data_pos + 6, line_end - data_pos - 6);
                     }
+                    message_received.store(true);
+                    return false; // Stop reading
                 }
-                return !message_received.load();
-            });
+            }
+            return !message_received.load();
+        });
     });
 
     // Wait for SSE connection and endpoint event
     for (int i = 0; i < 100 && !endpoint_received.load(); ++i) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
-    ASSERT_TRUE(endpoint_received.load())
-        << "SSE endpoint event not received";
+    ASSERT_TRUE(endpoint_received.load()) << "SSE endpoint event not received";
 
     std::string sid;
     {
@@ -150,10 +138,10 @@ TEST_F(McpSseTest, SseConnectionAndMessageRoundtrip) {
     // Send a JSON-RPC request via POST
     httplib::Client post_cli("localhost", TEST_PORT);
     httplib::Headers headers = {{"Mcp-Session-Id", sid}};
-    auto res = post_cli.Post(
-        "/message", headers,
-        R"({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})",
-        "application/json");
+    auto res = post_cli.Post("/message",
+                             headers,
+                             R"({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})",
+                             "application/json");
     ASSERT_NE(res, nullptr);
     EXPECT_EQ(res->status, 202);
 
@@ -161,7 +149,8 @@ TEST_F(McpSseTest, SseConnectionAndMessageRoundtrip) {
     gg::McpRequest mcp_req;
     for (int i = 0; i < 50; ++i) {
         mcp_req = transport_->poll_request();
-        if (!mcp_req.body.empty()) break;
+        if (!mcp_req.body.empty())
+            break;
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
     ASSERT_FALSE(mcp_req.body.empty());
@@ -182,8 +171,7 @@ TEST_F(McpSseTest, SseConnectionAndMessageRoundtrip) {
 
     sse_thread.join();
 
-    ASSERT_TRUE(message_received.load())
-        << "SSE message event not received";
+    ASSERT_TRUE(message_received.load()) << "SSE message event not received";
     std::string resp_str;
     {
         std::lock_guard<std::mutex> lock(data_mutex);
@@ -191,9 +179,7 @@ TEST_F(McpSseTest, SseConnectionAndMessageRoundtrip) {
     }
     auto resp_json = nlohmann::json::parse(resp_str);
     EXPECT_TRUE(resp_json.contains("result"));
-    EXPECT_EQ(
-        resp_json["result"]["serverInfo"]["name"].get<std::string>(),
-        "test-engine");
+    EXPECT_EQ(resp_json["result"]["serverInfo"]["name"].get<std::string>(), "test-engine");
 }
 
 TEST_F(McpSseTest, PortAccessor) {
