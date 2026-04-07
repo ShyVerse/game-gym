@@ -50,6 +50,12 @@ if get_option('enable_tests')
   )
   test('mcp', test_mcp)
 
+  test_mcp_sse = executable('test_mcp_sse',
+    'test_mcp_sse.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('mcp_sse', test_mcp_sse)
+
   test_mat4 = executable('test_mat4',
     'test_mat4.cpp',
     dependencies: [engine_dep, gtest_dep, gtest_main_dep],
