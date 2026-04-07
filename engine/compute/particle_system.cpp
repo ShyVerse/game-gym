@@ -147,8 +147,11 @@ void ParticleSystem::step(float dt) {
 
     // Upload params
     auto& cfg = impl.config;
-    float cell_size =
-        (cfg.bounds_max.x - cfg.bounds_min.x) / static_cast<float>(cfg.grid_resolution);
+    float extent_x = cfg.bounds_max.x - cfg.bounds_min.x;
+    float extent_y = cfg.bounds_max.y - cfg.bounds_min.y;
+    float extent_z = cfg.bounds_max.z - cfg.bounds_min.z;
+    float max_extent = std::max({extent_x, extent_y, extent_z});
+    float cell_size = max_extent / static_cast<float>(cfg.grid_resolution);
     GpuSimParams params{};
     params.dt = dt;
     params.gravity = cfg.gravity;
