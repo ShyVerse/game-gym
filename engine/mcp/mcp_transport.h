@@ -19,8 +19,7 @@ public:
     virtual McpRequest poll_request() = 0;
 
     /// Send a response to a specific client session.
-    virtual void send_response(const std::string& session_id,
-                               const std::string& response) = 0;
+    virtual void send_response(const std::string& session_id, const std::string& response) = 0;
 };
 
 } // namespace gg

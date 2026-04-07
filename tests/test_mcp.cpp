@@ -118,8 +118,7 @@ TEST(McpServerTest, HandlesParseError) {
 TEST(McpServerTest, HandlesNotificationInitialized) {
     auto server = gg::McpServer::create("test", "1.0");
 
-    const std::string req =
-        R"({"jsonrpc":"2.0","method":"notifications/initialized"})";
+    const std::string req = R"({"jsonrpc":"2.0","method":"notifications/initialized"})";
     const std::string resp = server->handle_message(req);
 
     EXPECT_EQ(resp, "");
@@ -132,21 +131,17 @@ TEST(McpServerTest, HandlesToolCallException) {
     tool.name = "thrower";
     tool.description = "Throws an exception";
     tool.input_schema = R"({"type":"object"})";
-    tool.handler = [](const std::string&) -> std::string {
-        throw std::runtime_error("boom");
-    };
+    tool.handler = [](const std::string&) -> std::string { throw std::runtime_error("boom"); };
     server->register_tool(std::move(tool));
 
-    const std::string req =
-        R"({"jsonrpc":"2.0","id":99,"method":"tools/call",)"
-        R"("params":{"name":"thrower","arguments":{}}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":99,"method":"tools/call",)"
+                            R"("params":{"name":"thrower","arguments":{}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
     ASSERT_TRUE(j.contains("error"));
     EXPECT_EQ(j["error"]["code"].get<int>(), -32603);
-    EXPECT_NE(j["error"]["message"].get<std::string>().find("boom"),
-              std::string::npos);
+    EXPECT_NE(j["error"]["message"].get<std::string>().find("boom"), std::string::npos);
 }
 
 TEST(McpServerTest, HandlesInvalidInputSchema) {
@@ -315,9 +310,8 @@ TEST(McpToolsTest, GetEntityWithAllComponents) {
     e.set<gg::Velocity>({{4.0f, 5.0f, 6.0f}, {}});
     e.set<gg::RigidBody>({42, false});
 
-    const std::string req =
-        R"({"jsonrpc":"2.0","id":20,"method":"tools/call",)"
-        R"("params":{"name":"get_entity","arguments":{"name":"hero"}}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":20,"method":"tools/call",)"
+                            R"("params":{"name":"get_entity","arguments":{"name":"hero"}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -343,9 +337,8 @@ TEST(McpToolsTest, GetEntityNotFound) {
     auto server = gg::McpServer::create("test", "1.0");
     gg::register_mcp_tools(*server, *world, *physics);
 
-    const std::string req =
-        R"({"jsonrpc":"2.0","id":21,"method":"tools/call",)"
-        R"("params":{"name":"get_entity","arguments":{"name":"ghost"}}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":21,"method":"tools/call",)"
+                            R"("params":{"name":"get_entity","arguments":{"name":"ghost"}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -373,9 +366,8 @@ TEST(McpToolsTest, GetEntityInvalidJson) {
     auto e = world->create_entity("bare");
     e.set<gg::Name>({"bare"});
 
-    const std::string req =
-        R"({"jsonrpc":"2.0","id":22,"method":"tools/call",)"
-        R"("params":{"name":"get_entity","arguments":{"name":"bare"}}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":22,"method":"tools/call",)"
+                            R"("params":{"name":"get_entity","arguments":{"name":"bare"}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -404,9 +396,8 @@ TEST(McpToolsTest, RemoveEntity) {
     e.set<gg::Name>({"victim"});
     e.set<gg::Transform>({});
 
-    const std::string req =
-        R"({"jsonrpc":"2.0","id":30,"method":"tools/call",)"
-        R"("params":{"name":"remove_entity","arguments":{"name":"victim"}}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":30,"method":"tools/call",)"
+                            R"("params":{"name":"remove_entity","arguments":{"name":"victim"}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -431,9 +422,8 @@ TEST(McpToolsTest, RemoveEntityNotFound) {
     auto server = gg::McpServer::create("test", "1.0");
     gg::register_mcp_tools(*server, *world, *physics);
 
-    const std::string req =
-        R"({"jsonrpc":"2.0","id":31,"method":"tools/call",)"
-        R"("params":{"name":"remove_entity","arguments":{"name":"nobody"}}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":31,"method":"tools/call",)"
+                            R"("params":{"name":"remove_entity","arguments":{"name":"nobody"}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -462,12 +452,11 @@ TEST(McpToolsTest, SetTransformRotationAndScale) {
     t0.scale = {1.0f, 1.0f, 1.0f};
     e.set<gg::Transform>(t0);
 
-    const std::string req =
-        R"({"jsonrpc":"2.0","id":40,"method":"tools/call",)"
-        R"("params":{"name":"set_transform","arguments":{)"
-        R"("name":"rotator",)"
-        R"("rotation":{"x":0.0,"y":0.707,"z":0.0,"w":0.707},)"
-        R"("scale":{"x":2.0,"y":2.0,"z":2.0}}}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":40,"method":"tools/call",)"
+                            R"("params":{"name":"set_transform","arguments":{)"
+                            R"("name":"rotator",)"
+                            R"("rotation":{"x":0.0,"y":0.707,"z":0.0,"w":0.707},)"
+                            R"("scale":{"x":2.0,"y":2.0,"z":2.0}}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -539,9 +528,8 @@ TEST(McpToolsTest, CreateEntityEmptyName) {
     auto server = gg::McpServer::create("test", "1.0");
     gg::register_mcp_tools(*server, *world, *physics);
 
-    const std::string req =
-        R"({"jsonrpc":"2.0","id":50,"method":"tools/call",)"
-        R"("params":{"name":"create_entity","arguments":{"name":""}}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":50,"method":"tools/call",)"
+                            R"("params":{"name":"create_entity","arguments":{"name":""}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
@@ -614,9 +602,8 @@ TEST(McpToolsTest, RaycastDefaultParams) {
     gg::register_mcp_tools(*server, *world, *physics);
 
     // Call with empty arguments — should use defaults and not crash
-    const std::string req =
-        R"({"jsonrpc":"2.0","id":61,"method":"tools/call",)"
-        R"("params":{"name":"raycast","arguments":{}}})";
+    const std::string req = R"({"jsonrpc":"2.0","id":61,"method":"tools/call",)"
+                            R"("params":{"name":"raycast","arguments":{}}})";
     const std::string resp = server->handle_message(req);
 
     auto j = nlohmann::json::parse(resp);
