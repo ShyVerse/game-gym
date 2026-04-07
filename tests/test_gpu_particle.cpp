@@ -266,3 +266,93 @@ TEST(GpuParticleTest, GridBuildCorrectness) {
         EXPECT_EQ(counts[i], 0u) << "Cell " << i << " should be empty";
     }
 }
+
+// ---------------------------------------------------------------------------
+// Pass 3: Particle Collision
+// ---------------------------------------------------------------------------
+
+TEST(GpuParticleTest, TwoParticleCollision) {
+    auto window = make_window();
+    auto ctx = gg::GpuContext::create(*window);
+
+    auto integrate_src = read_file("shaders/particle_integrate.wgsl");
+    auto grid_src = read_file("shaders/particle_grid_build.wgsl");
+    auto collide_src = read_file("shaders/particle_collide.wgsl");
+
+    constexpr uint32_t kCount = 2;
+    constexpr uint32_t kGridRes = 4;
+    constexpr uint32_t kTotalCells = kGridRes * kGridRes * kGridRes;
+    constexpr uint32_t kMaxPerCell = 8;
+
+    // Two particles approaching each other head-on
+    std::vector<GpuParticle> particles(kCount);
+    // Particle 0: moving right
+    particles[0].pos[0] = -0.04f;
+    particles[0].pos[1] = 5.0f;
+    particles[0].pos[2] = 0.0f;
+    particles[0].pos[3] = 0.05f; // radius
+    particles[0].vel[0] = 2.0f;
+    particles[0].vel[1] = 0.0f;
+    particles[0].vel[2] = 0.0f;
+    particles[0].vel[3] = 1.0f;
+
+    // Particle 1: moving left
+    particles[1].pos[0] = 0.04f;
+    particles[1].pos[1] = 5.0f;
+    particles[1].pos[2] = 0.0f;
+    particles[1].pos[3] = 0.05f;
+    particles[1].vel[0] = -2.0f;
+    particles[1].vel[1] = 0.0f;
+    particles[1].vel[2] = 0.0f;
+    particles[1].vel[3] = 1.0f;
+
+    SimParams params = make_default_params(kCount);
+    params.gravity = 0.0f; // disable gravity
+    params.grid_res = kGridRes;
+    params.cell_size = 20.0f / static_cast<float>(kGridRes);
+
+    uint64_t pbytes = kCount * sizeof(GpuParticle);
+    gg::GpuBuffer pbuf = gg::GpuBuffer::create_storage(ctx->device(), pbytes);
+    pbuf.upload(ctx->queue(), particles.data(), pbytes);
+
+    gg::GpuBuffer ubuf = gg::GpuBuffer::create_uniform(ctx->device(), sizeof(SimParams));
+    ubuf.upload(ctx->queue(), &params, sizeof(SimParams));
+
+    uint64_t counts_bytes = kTotalCells * sizeof(uint32_t);
+    gg::GpuBuffer counts_buf = gg::GpuBuffer::create_storage(ctx->device(), counts_bytes);
+
+    uint64_t entries_bytes = kTotalCells * kMaxPerCell * sizeof(uint32_t);
+    gg::GpuBuffer entries_buf = gg::GpuBuffer::create_storage(ctx->device(), entries_bytes);
+
+    auto integrate_pipe = gg::ComputePipeline::create(ctx->device(), integrate_src);
+    auto clear_pipe = gg::ComputePipeline::create(ctx->device(), grid_src, "clear");
+    auto insert_pipe = gg::ComputePipeline::create(ctx->device(), grid_src, "insert");
+    auto collide_pipe = gg::ComputePipeline::create(ctx->device(), collide_src);
+
+    // Run full 3-pass pipeline
+    integrate_pipe->dispatch(ctx->device(), ctx->queue(),
+                             {pbuf.handle(), ubuf.handle()}, workgroups(kCount));
+    clear_pipe->dispatch(ctx->device(), ctx->queue(),
+                         {pbuf.handle(), ubuf.handle(),
+                          counts_buf.handle(), entries_buf.handle()},
+                         workgroups(kTotalCells));
+    insert_pipe->dispatch(ctx->device(), ctx->queue(),
+                          {pbuf.handle(), ubuf.handle(),
+                           counts_buf.handle(), entries_buf.handle()},
+                          workgroups(kCount));
+    collide_pipe->dispatch(ctx->device(), ctx->queue(),
+                           {pbuf.handle(), ubuf.handle(),
+                            counts_buf.handle(), entries_buf.handle()},
+                           workgroups(kCount));
+
+    auto result = pbuf.readback(ctx->device(), ctx->queue());
+    const auto* out = reinterpret_cast<const GpuParticle*>(result.data());
+
+    // After collision: particles should be pushed apart (separation >= combined radius)
+    float separation = std::abs(out[0].pos[0] - out[1].pos[0]);
+    EXPECT_GE(separation, 0.09f)
+        << "Particles should not overlap after collision";
+
+    // Particle 0 velocity should decrease after collision
+    EXPECT_LT(out[0].vel[0], 2.0f) << "Particle 0 velocity should decrease after collision";
+}
