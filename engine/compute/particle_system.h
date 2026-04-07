@@ -27,7 +27,7 @@ struct ParticleSystemConfig {
 class ParticleSystem {
 public:
     static std::unique_ptr<ParticleSystem> create(GpuContext& gpu,
-                                                   const ParticleSystemConfig& config = {});
+                                                  const ParticleSystemConfig& config = {});
     ~ParticleSystem();
 
     ParticleSystem(const ParticleSystem&) = delete;

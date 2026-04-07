@@ -1,4 +1,5 @@
 #include "compute/particle_system.h"
+
 #include "compute/compute_pipeline.h"
 #include "compute/gpu_buffer.h"
 #include "renderer/gpu_context.h"
@@ -127,8 +128,8 @@ void ParticleSystem::spawn(uint32_t count, Vec3 center, Vec3 extent, Vec3 veloci
     }
 
     uint64_t offset = start * sizeof(ParticleData);
-    impl.particle_buf->upload(impl.gpu->queue(), particles.data(),
-                              to_add * sizeof(ParticleData), offset);
+    impl.particle_buf->upload(
+        impl.gpu->queue(), particles.data(), to_add * sizeof(ParticleData), offset);
     impl.active_count = start + to_add;
 }
 
@@ -143,7 +144,8 @@ void ParticleSystem::step(float dt) {
 
     // Upload params
     auto& cfg = impl.config;
-    float cell_size = (cfg.bounds_max.x - cfg.bounds_min.x) / static_cast<float>(cfg.grid_resolution);
+    float cell_size =
+        (cfg.bounds_max.x - cfg.bounds_min.x) / static_cast<float>(cfg.grid_resolution);
     GpuSimParams params{};
     params.dt = dt;
     params.gravity = cfg.gravity;
@@ -164,29 +166,34 @@ void ParticleSystem::step(float dt) {
     uint32_t grid_wg = div_ceil(total_cells, WORKGROUP_SIZE);
 
     // Pass 1: Integrate + boundary
-    impl.integrate_pipe->dispatch(device, queue,
-                                  {impl.particle_buf->handle(), impl.params_buf->handle()},
-                                  particle_wg);
+    impl.integrate_pipe->dispatch(
+        device, queue, {impl.particle_buf->handle(), impl.params_buf->handle()}, particle_wg);
 
     // Pass 2: Grid clear + insert
-    impl.grid_clear_pipe->dispatch(
-        device, queue,
-        {impl.particle_buf->handle(), impl.params_buf->handle(),
-         impl.grid_counts_buf->handle(), impl.grid_entries_buf->handle()},
-        grid_wg);
+    impl.grid_clear_pipe->dispatch(device,
+                                   queue,
+                                   {impl.particle_buf->handle(),
+                                    impl.params_buf->handle(),
+                                    impl.grid_counts_buf->handle(),
+                                    impl.grid_entries_buf->handle()},
+                                   grid_wg);
 
-    impl.grid_insert_pipe->dispatch(
-        device, queue,
-        {impl.particle_buf->handle(), impl.params_buf->handle(),
-         impl.grid_counts_buf->handle(), impl.grid_entries_buf->handle()},
-        particle_wg);
+    impl.grid_insert_pipe->dispatch(device,
+                                    queue,
+                                    {impl.particle_buf->handle(),
+                                     impl.params_buf->handle(),
+                                     impl.grid_counts_buf->handle(),
+                                     impl.grid_entries_buf->handle()},
+                                    particle_wg);
 
     // Pass 3: Collide
-    impl.collide_pipe->dispatch(
-        device, queue,
-        {impl.particle_buf->handle(), impl.params_buf->handle(),
-         impl.grid_counts_buf->handle(), impl.grid_entries_buf->handle()},
-        particle_wg);
+    impl.collide_pipe->dispatch(device,
+                                queue,
+                                {impl.particle_buf->handle(),
+                                 impl.params_buf->handle(),
+                                 impl.grid_counts_buf->handle(),
+                                 impl.grid_entries_buf->handle()},
+                                particle_wg);
 }
 
 std::vector<ParticleData> ParticleSystem::readback() {

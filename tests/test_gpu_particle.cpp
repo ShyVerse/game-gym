@@ -103,8 +103,8 @@ TEST(GpuParticleTest, GravityFall) {
 
     // Run 10 steps
     for (int i = 0; i < 10; ++i) {
-        pipeline->dispatch(ctx->device(), ctx->queue(),
-                           {pbuf.handle(), ubuf.handle()}, workgroups(kCount));
+        pipeline->dispatch(
+            ctx->device(), ctx->queue(), {pbuf.handle(), ubuf.handle()}, workgroups(kCount));
     }
 
     auto result = pbuf.readback(ctx->device(), ctx->queue());
@@ -140,8 +140,8 @@ TEST(GpuParticleTest, BoundaryBounce) {
     ubuf.upload(ctx->queue(), &params, sizeof(SimParams));
 
     auto pipeline = gg::ComputePipeline::create(ctx->device(), shader);
-    pipeline->dispatch(ctx->device(), ctx->queue(),
-                       {pbuf.handle(), ubuf.handle()}, workgroups(kCount));
+    pipeline->dispatch(
+        ctx->device(), ctx->queue(), {pbuf.handle(), ubuf.handle()}, workgroups(kCount));
 
     auto result = pbuf.readback(ctx->device(), ctx->queue());
     const auto* out = reinterpret_cast<const GpuParticle*>(result.data());
@@ -176,8 +176,8 @@ TEST(GpuParticleTest, WallBounce) {
     ubuf.upload(ctx->queue(), &params, sizeof(SimParams));
 
     auto pipeline = gg::ComputePipeline::create(ctx->device(), shader);
-    pipeline->dispatch(ctx->device(), ctx->queue(),
-                       {pbuf.handle(), ubuf.handle()}, workgroups(kCount));
+    pipeline->dispatch(
+        ctx->device(), ctx->queue(), {pbuf.handle(), ubuf.handle()}, workgroups(kCount));
 
     auto result = pbuf.readback(ctx->device(), ctx->queue());
     const auto* out = reinterpret_cast<const GpuParticle*>(result.data());
@@ -242,17 +242,19 @@ TEST(GpuParticleTest, GridBuildCorrectness) {
 
     // Clear pass
     auto clear_pipeline = gg::ComputePipeline::create(ctx->device(), clear_shader, "clear");
-    clear_pipeline->dispatch(ctx->device(), ctx->queue(),
-                             {pbuf.handle(), ubuf.handle(),
-                              counts_buf.handle(), entries_buf.handle()},
-                             workgroups(kTotalCells));
+    clear_pipeline->dispatch(
+        ctx->device(),
+        ctx->queue(),
+        {pbuf.handle(), ubuf.handle(), counts_buf.handle(), entries_buf.handle()},
+        workgroups(kTotalCells));
 
     // Insert pass
     auto insert_pipeline = gg::ComputePipeline::create(ctx->device(), insert_shader, "insert");
-    insert_pipeline->dispatch(ctx->device(), ctx->queue(),
-                              {pbuf.handle(), ubuf.handle(),
-                               counts_buf.handle(), entries_buf.handle()},
-                              workgroups(kCount));
+    insert_pipeline->dispatch(
+        ctx->device(),
+        ctx->queue(),
+        {pbuf.handle(), ubuf.handle(), counts_buf.handle(), entries_buf.handle()},
+        workgroups(kCount));
 
     // Readback counts
     auto counts_data = counts_buf.readback(ctx->device(), ctx->queue());
@@ -331,28 +333,28 @@ TEST(GpuParticleTest, TwoParticleCollision) {
     auto collide_pipe = gg::ComputePipeline::create(ctx->device(), collide_src);
 
     // Run full 3-pass pipeline
-    integrate_pipe->dispatch(ctx->device(), ctx->queue(),
-                             {pbuf.handle(), ubuf.handle()}, workgroups(kCount));
-    clear_pipe->dispatch(ctx->device(), ctx->queue(),
-                         {pbuf.handle(), ubuf.handle(),
-                          counts_buf.handle(), entries_buf.handle()},
+    integrate_pipe->dispatch(
+        ctx->device(), ctx->queue(), {pbuf.handle(), ubuf.handle()}, workgroups(kCount));
+    clear_pipe->dispatch(ctx->device(),
+                         ctx->queue(),
+                         {pbuf.handle(), ubuf.handle(), counts_buf.handle(), entries_buf.handle()},
                          workgroups(kTotalCells));
-    insert_pipe->dispatch(ctx->device(), ctx->queue(),
-                          {pbuf.handle(), ubuf.handle(),
-                           counts_buf.handle(), entries_buf.handle()},
+    insert_pipe->dispatch(ctx->device(),
+                          ctx->queue(),
+                          {pbuf.handle(), ubuf.handle(), counts_buf.handle(), entries_buf.handle()},
                           workgroups(kCount));
-    collide_pipe->dispatch(ctx->device(), ctx->queue(),
-                           {pbuf.handle(), ubuf.handle(),
-                            counts_buf.handle(), entries_buf.handle()},
-                           workgroups(kCount));
+    collide_pipe->dispatch(
+        ctx->device(),
+        ctx->queue(),
+        {pbuf.handle(), ubuf.handle(), counts_buf.handle(), entries_buf.handle()},
+        workgroups(kCount));
 
     auto result = pbuf.readback(ctx->device(), ctx->queue());
     const auto* out = reinterpret_cast<const GpuParticle*>(result.data());
 
     // After collision: particles should be pushed apart (separation >= combined radius)
     float separation = std::abs(out[0].pos[0] - out[1].pos[0]);
-    EXPECT_GE(separation, 0.09f)
-        << "Particles should not overlap after collision";
+    EXPECT_GE(separation, 0.09f) << "Particles should not overlap after collision";
 
     // Particle 0 velocity should decrease after collision
     EXPECT_LT(out[0].vel[0], 2.0f) << "Particle 0 velocity should decrease after collision";
@@ -381,11 +383,12 @@ TEST(ParticleSystemTest, StepAppliesGravity) {
     auto window = make_window();
     auto ctx = gg::GpuContext::create(*window);
 
-    auto sys = gg::ParticleSystem::create(*ctx, {
-        .max_particles = 1,
-        .gravity = -9.81f,
-        .grid_resolution = 4,
-    });
+    auto sys = gg::ParticleSystem::create(*ctx,
+                                          {
+                                              .max_particles = 1,
+                                              .gravity = -9.81f,
+                                              .grid_resolution = 4,
+                                          });
 
     // Manually spawn one particle at known position
     sys->spawn(1, {0, 10, 0}, {0, 0, 0}, {0, 0, 0});
@@ -403,10 +406,11 @@ TEST(ParticleSystemTest, LargeScaleStability) {
     auto window = make_window();
     auto ctx = gg::GpuContext::create(*window);
 
-    auto sys = gg::ParticleSystem::create(*ctx, {
-        .max_particles = 10000,
-        .grid_resolution = 16,
-    });
+    auto sys = gg::ParticleSystem::create(*ctx,
+                                          {
+                                              .max_particles = 10000,
+                                              .grid_resolution = 16,
+                                          });
 
     sys->spawn(10000, {0, 10, 0}, {5, 5, 5}, {2, 2, 2});
 
