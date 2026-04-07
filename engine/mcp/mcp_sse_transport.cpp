@@ -21,7 +21,7 @@ uint16_t McpSseTransport::port() const {
 }
 
 size_t McpSseTransport::client_count() const {
-    std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(clients_mutex_));
+    std::scoped_lock<std::mutex> lock(const_cast<std::mutex&>(clients_mutex_));
     size_t count = 0;
     for (const auto& [id, client] : clients_) {
         if (client->connected.load()) {
@@ -41,7 +41,7 @@ void McpSseTransport::stop() {
 
     // Notify all SSE clients to unblock
     {
-        std::lock_guard<std::mutex> lock(clients_mutex_);
+        std::scoped_lock<std::mutex> lock(clients_mutex_);
         for (auto& [id, client] : clients_) {
             client->connected.store(false);
             client->cv.notify_all();
@@ -59,7 +59,7 @@ void McpSseTransport::stop() {
 }
 
 McpRequest McpSseTransport::poll_request() {
-    std::lock_guard<std::mutex> lock(request_mutex_);
+    std::scoped_lock<std::mutex> lock(request_mutex_);
     if (request_queue_.empty()) {
         return {};
     }
@@ -69,14 +69,14 @@ McpRequest McpSseTransport::poll_request() {
 }
 
 void McpSseTransport::send_response(const std::string& session_id, const std::string& response) {
-    std::lock_guard<std::mutex> lock(clients_mutex_);
+    std::scoped_lock<std::mutex> lock(clients_mutex_);
     auto it = clients_.find(session_id);
     if (it == clients_.end()) {
         return;
     }
     auto& client = it->second;
     {
-        std::lock_guard<std::mutex> client_lock(client->mutex);
+        std::scoped_lock<std::mutex> client_lock(client->mutex);
         client->responses.push(response);
     }
     client->cv.notify_one();
@@ -100,7 +100,7 @@ void McpSseTransport::server_thread_func() {
         auto client = std::make_shared<SseClient>();
 
         {
-            std::lock_guard<std::mutex> lock(clients_mutex_);
+            std::scoped_lock<std::mutex> lock(clients_mutex_);
             session_id = std::to_string(next_session_id_++);
             clients_[session_id] = client;
         }
@@ -146,7 +146,7 @@ void McpSseTransport::server_thread_func() {
 
                 // Cleanup
                 {
-                    std::lock_guard<std::mutex> lock2(clients_mutex_);
+                    std::scoped_lock<std::mutex> lock2(clients_mutex_);
                     clients_.erase(session_id);
                 }
                 sink.done();
@@ -166,7 +166,7 @@ void McpSseTransport::server_thread_func() {
         }
 
         {
-            std::lock_guard<std::mutex> lock(clients_mutex_);
+            std::scoped_lock<std::mutex> lock(clients_mutex_);
             if (clients_.find(session_id) == clients_.end()) {
                 res.status = 404;
                 res.set_content(R"({"error":"Unknown session"})", "application/json");
@@ -175,7 +175,7 @@ void McpSseTransport::server_thread_func() {
         }
 
         {
-            std::lock_guard<std::mutex> lock(request_mutex_);
+            std::scoped_lock<std::mutex> lock(request_mutex_);
             request_queue_.push({session_id, req.body});
         }
 
