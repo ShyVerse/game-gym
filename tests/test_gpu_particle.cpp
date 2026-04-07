@@ -1,5 +1,6 @@
 #include "compute/compute_pipeline.h"
 #include "compute/gpu_buffer.h"
+#include "compute/particle_system.h"
 #include "core/window.h"
 #include "renderer/gpu_context.h"
 
@@ -355,4 +356,83 @@ TEST(GpuParticleTest, TwoParticleCollision) {
 
     // Particle 0 velocity should decrease after collision
     EXPECT_LT(out[0].vel[0], 2.0f) << "Particle 0 velocity should decrease after collision";
+}
+
+// ---------------------------------------------------------------------------
+// ParticleSystem Integration Tests
+// ---------------------------------------------------------------------------
+
+TEST(ParticleSystemTest, CreateAndSpawn) {
+    auto window = make_window();
+    auto ctx = gg::GpuContext::create(*window);
+
+    auto sys = gg::ParticleSystem::create(*ctx, {.max_particles = 1000});
+    ASSERT_NE(sys, nullptr);
+    EXPECT_EQ(sys->count(), 0u);
+
+    sys->spawn(100, {0, 5, 0}, {1, 1, 1}, {1, 1, 1});
+    EXPECT_EQ(sys->count(), 100u);
+
+    auto data = sys->readback();
+    ASSERT_EQ(data.size(), 100u);
+}
+
+TEST(ParticleSystemTest, StepAppliesGravity) {
+    auto window = make_window();
+    auto ctx = gg::GpuContext::create(*window);
+
+    auto sys = gg::ParticleSystem::create(*ctx, {
+        .max_particles = 1,
+        .gravity = -9.81f,
+        .grid_resolution = 4,
+    });
+
+    // Manually spawn one particle at known position
+    sys->spawn(1, {0, 10, 0}, {0, 0, 0}, {0, 0, 0});
+
+    for (int i = 0; i < 10; ++i) {
+        sys->step(1.0f / 60.0f);
+    }
+
+    auto data = sys->readback();
+    ASSERT_EQ(data.size(), 1u);
+    EXPECT_LT(data[0].pos[1], 10.0f) << "Particle should fall under gravity";
+}
+
+TEST(ParticleSystemTest, LargeScaleStability) {
+    auto window = make_window();
+    auto ctx = gg::GpuContext::create(*window);
+
+    auto sys = gg::ParticleSystem::create(*ctx, {
+        .max_particles = 10000,
+        .grid_resolution = 16,
+    });
+
+    sys->spawn(10000, {0, 10, 0}, {5, 5, 5}, {2, 2, 2});
+
+    // Run 60 frames
+    for (int i = 0; i < 60; ++i) {
+        sys->step(1.0f / 60.0f);
+    }
+
+    auto data = sys->readback();
+    ASSERT_EQ(data.size(), 10000u);
+
+    // Check no NaN/Inf
+    for (size_t i = 0; i < data.size(); ++i) {
+        EXPECT_FALSE(std::isnan(data[i].pos[0])) << "NaN at particle " << i;
+        EXPECT_FALSE(std::isnan(data[i].pos[1])) << "NaN at particle " << i;
+        EXPECT_FALSE(std::isnan(data[i].pos[2])) << "NaN at particle " << i;
+        EXPECT_FALSE(std::isinf(data[i].pos[0])) << "Inf at particle " << i;
+        EXPECT_FALSE(std::isinf(data[i].pos[1])) << "Inf at particle " << i;
+        EXPECT_FALSE(std::isinf(data[i].pos[2])) << "Inf at particle " << i;
+    }
+
+    // All particles should be within bounds (with small tolerance)
+    for (size_t i = 0; i < data.size(); ++i) {
+        EXPECT_GE(data[i].pos[0], -10.5f) << "Out of bounds particle " << i;
+        EXPECT_LE(data[i].pos[0], 10.5f) << "Out of bounds particle " << i;
+        EXPECT_GE(data[i].pos[1], -0.5f) << "Out of bounds particle " << i;
+        EXPECT_LE(data[i].pos[1], 20.5f) << "Out of bounds particle " << i;
+    }
 }
