@@ -184,3 +184,85 @@ TEST(GpuParticleTest, WallBounce) {
     EXPECT_LE(out->pos[0], 10.0f - 0.05f) << "Particle must stay inside wall";
     EXPECT_LT(out->vel[0], 0.0f) << "Velocity should flip after wall bounce";
 }
+
+// ---------------------------------------------------------------------------
+// Pass 2: Grid Build
+// ---------------------------------------------------------------------------
+
+TEST(GpuParticleTest, GridBuildCorrectness) {
+    auto window = make_window();
+    auto ctx = gg::GpuContext::create(*window);
+
+    auto clear_shader = read_file("shaders/particle_grid_build.wgsl");
+    auto insert_shader = clear_shader; // same file, different entry points
+
+    constexpr uint32_t kCount = 4;
+    constexpr uint32_t kGridRes = 4;
+    constexpr uint32_t kTotalCells = kGridRes * kGridRes * kGridRes; // 64
+    constexpr uint32_t kMaxPerCell = 8;
+
+    // Place 4 particles in known positions within a small grid
+    std::vector<GpuParticle> particles(kCount);
+    // All in cell (0,0,0)
+    for (auto& p : particles) {
+        p.pos[0] = -9.0f;
+        p.pos[1] = 0.5f;
+        p.pos[2] = -9.0f;
+        p.pos[3] = 0.05f;
+        p.vel[0] = 0.0f;
+        p.vel[1] = 0.0f;
+        p.vel[2] = 0.0f;
+        p.vel[3] = 1.0f;
+    }
+
+    SimParams params{};
+    params.count = kCount;
+    params.grid_res = kGridRes;
+    params.bounds_min[0] = -10.0f;
+    params.bounds_min[1] = 0.0f;
+    params.bounds_min[2] = -10.0f;
+    params.bounds_max[0] = 10.0f;
+    params.bounds_max[1] = 20.0f;
+    params.bounds_max[2] = 10.0f;
+    params.cell_size = 20.0f / static_cast<float>(kGridRes); // 5.0
+
+    uint64_t pbytes = kCount * sizeof(GpuParticle);
+    gg::GpuBuffer pbuf = gg::GpuBuffer::create_storage(ctx->device(), pbytes);
+    pbuf.upload(ctx->queue(), particles.data(), pbytes);
+
+    gg::GpuBuffer ubuf = gg::GpuBuffer::create_uniform(ctx->device(), sizeof(SimParams));
+    ubuf.upload(ctx->queue(), &params, sizeof(SimParams));
+
+    uint64_t counts_bytes = kTotalCells * sizeof(uint32_t);
+    gg::GpuBuffer counts_buf = gg::GpuBuffer::create_storage(ctx->device(), counts_bytes);
+
+    uint64_t entries_bytes = kTotalCells * kMaxPerCell * sizeof(uint32_t);
+    gg::GpuBuffer entries_buf = gg::GpuBuffer::create_storage(ctx->device(), entries_bytes);
+
+    // Clear pass
+    auto clear_pipeline = gg::ComputePipeline::create(ctx->device(), clear_shader, "clear");
+    clear_pipeline->dispatch(ctx->device(), ctx->queue(),
+                             {pbuf.handle(), ubuf.handle(),
+                              counts_buf.handle(), entries_buf.handle()},
+                             workgroups(kTotalCells));
+
+    // Insert pass
+    auto insert_pipeline = gg::ComputePipeline::create(ctx->device(), insert_shader, "insert");
+    insert_pipeline->dispatch(ctx->device(), ctx->queue(),
+                              {pbuf.handle(), ubuf.handle(),
+                               counts_buf.handle(), entries_buf.handle()},
+                              workgroups(kCount));
+
+    // Readback counts
+    auto counts_data = counts_buf.readback(ctx->device(), ctx->queue());
+    const auto* counts = reinterpret_cast<const uint32_t*>(counts_data.data());
+
+    // Cell (0,0,0) = index 0 should have 4 particles
+    // pos (-9, 0.5, -9) → rel = (1, 0.5, 1)/5 = (0.2, 0.1, 0.2) → cell (0,0,0) = 0
+    EXPECT_EQ(counts[0], 4u) << "Cell (0,0,0) should contain all 4 particles";
+
+    // All other cells should be 0
+    for (uint32_t i = 1; i < kTotalCells; ++i) {
+        EXPECT_EQ(counts[i], 0u) << "Cell " << i << " should be empty";
+    }
+}
