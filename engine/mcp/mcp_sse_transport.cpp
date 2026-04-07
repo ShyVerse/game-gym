@@ -20,7 +20,7 @@ uint16_t McpSseTransport::port() const {
 }
 
 size_t McpSseTransport::client_count() const {
-    std::scoped_lock<std::mutex> lock(const_cast<std::mutex&>(clients_mutex_));
+    std::scoped_lock<std::mutex> lock(clients_mutex_);
     size_t count = 0;
     for (const auto& [id, client] : clients_) {
         if (client->connected.load()) {
@@ -32,6 +32,7 @@ size_t McpSseTransport::client_count() const {
 
 void McpSseTransport::start() {
     running_.store(true);
+    server_ = std::make_unique<httplib::Server>();
     server_thread_ = std::thread([this]() { server_thread_func(); });
 }
 
@@ -95,7 +96,6 @@ void McpSseTransport::send_response(const std::string& session_id, const std::st
 }
 
 void McpSseTransport::server_thread_func() {
-    server_ = std::make_unique<httplib::Server>();
     auto& svr = *server_;
 
     // Health check
@@ -256,7 +256,7 @@ void McpSseTransport::server_thread_func() {
         res.set_header("Location", "/");
     });
 
-    svr.listen("0.0.0.0", port_);
+    svr.listen("127.0.0.1", port_);
 }
 
 } // namespace gg

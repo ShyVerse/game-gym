@@ -49,7 +49,7 @@ private:
         std::queue<std::string> responses;
         std::atomic<bool> connected{true};
     };
-    std::mutex clients_mutex_;
+    mutable std::mutex clients_mutex_;
     std::unordered_map<std::string, std::shared_ptr<SseClient>> clients_;
 
     uint64_t next_session_id_{1};

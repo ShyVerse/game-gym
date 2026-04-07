@@ -30,7 +30,12 @@ int main(int argc, char* argv[]) {
         } else if (std::string(argv[i]) == "--scene" && i + 1 < argc) {
             startup_scene_override = argv[++i];
         } else if (std::string(argv[i]) == "--mcp-port" && i + 1 < argc) {
-            mcp_port = static_cast<uint16_t>(std::stoi(argv[++i]));
+            int port_val = std::stoi(argv[++i]);
+            if (port_val < 1 || port_val > 65535) {
+                std::fprintf(stderr, "Error: --mcp-port must be between 1 and 65535\n");
+                return EXIT_FAILURE;
+            }
+            mcp_port = static_cast<uint16_t>(port_val);
         } else if (std::string(argv[i]) == "--mcp") {
             enable_mcp = true;
         } else if (i == 1 && argv[i][0] != '-') {
