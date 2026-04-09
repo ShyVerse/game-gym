@@ -169,8 +169,7 @@ void Window::set_cursor_captured(bool captured) const {
     if (!handle_) {
         return;
     }
-    glfwSetInputMode(
-        handle_, GLFW_CURSOR, captured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(handle_, GLFW_CURSOR, captured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
 } // namespace gg

@@ -30,9 +30,9 @@
 #include "script/script_manager.h"
 #endif
 
+#include <GLFW/glfw3.h>
 #include <filesystem>
 #include <fstream>
-#include <GLFW/glfw3.h>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
