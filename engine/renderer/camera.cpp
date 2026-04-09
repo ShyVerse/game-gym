@@ -23,7 +23,12 @@ Vec3 Camera::forward_direction() const {
 }
 
 Vec3 Camera::right_direction() const {
-    return vec3_normalize(vec3_cross(forward_direction(), {0.0f, 1.0f, 0.0f}));
+    const Vec3 forward = forward_direction();
+    const Vec3 world_up{0.0f, 1.0f, 0.0f};
+    if (std::abs(vec3_dot(forward, world_up)) > 0.999f) {
+        return vec3_normalize(vec3_cross(forward, {0.0f, 0.0f, 1.0f}));
+    }
+    return vec3_normalize(vec3_cross(forward, world_up));
 }
 
 void Camera::look(float dx, float dy) {

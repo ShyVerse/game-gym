@@ -8,8 +8,8 @@ namespace gg {
 
 struct ComponentMeta {
     std::string_view stable_id;
-    std::string_view display_name;
-    std::string_view category;
+    const char* display_name;
+    const char* category;
     bool serializable;
     bool editor_visible;
     bool addable;

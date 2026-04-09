@@ -171,3 +171,18 @@ TEST(CameraTest, FlyModeRoundTripsBackToOrbitWithoutInvalidMatrices) {
         EXPECT_FALSE(std::isinf(value));
     }
 }
+
+TEST(CameraTest, FlyStrafeRemainsFiniteNearPitchLimit) {
+    auto cam = gg::Camera::create();
+    cam->set_fly_mode(true);
+    cam->look(0.0f, 1000.0f);
+
+    const auto before = cam->eye_position();
+    cam->move_local(1.0f, 0.0f, 0.0f, 1.0f);
+    const auto after = cam->eye_position();
+
+    EXPECT_FALSE(std::isnan(after.x));
+    EXPECT_FALSE(std::isnan(after.y));
+    EXPECT_FALSE(std::isnan(after.z));
+    EXPECT_NE(after.x, before.x);
+}

@@ -155,7 +155,7 @@ void EditorUI::draw_panels(World& world,
 
         const auto section_label = [](std::string_view stable_id) -> const char* {
             const ComponentMeta* meta = find_component_meta(stable_id);
-            return meta != nullptr ? meta->display_name.data() : "";
+            return meta != nullptr ? meta->display_name : "";
         };
 
         // Transform
