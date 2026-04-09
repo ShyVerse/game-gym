@@ -76,9 +76,8 @@ void Camera::move_local(float right, float /*up*/, float forward, float dt) {
     }
 
     constexpr float move_speed = 5.0f;
-    const Vec3 delta = vec3_add(
-        vec3_scale(right_direction(), right * move_speed * dt),
-        vec3_scale(forward_direction(), -forward * move_speed * dt));
+    const Vec3 delta = vec3_add(vec3_scale(right_direction(), right * move_speed * dt),
+                                vec3_scale(forward_direction(), -forward * move_speed * dt));
     position_ = vec3_add(position_, delta);
 }
 
