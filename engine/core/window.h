@@ -37,8 +37,10 @@ public:
     [[nodiscard]] float mouse_x() const;
     [[nodiscard]] float mouse_y() const;
     [[nodiscard]] bool mouse_button(int button) const;
+    [[nodiscard]] bool key_down(int key) const;
     [[nodiscard]] float scroll_delta_y() const;
     void reset_scroll();
+    void set_cursor_captured(bool captured) const;
 
 private:
     explicit Window(GLFWwindow* handle, uint32_t w, uint32_t h);

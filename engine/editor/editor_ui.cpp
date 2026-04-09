@@ -1,5 +1,6 @@
 #include "editor/editor_ui.h"
 
+#include "ecs/component_registry.h"
 #include "ecs/components.h"
 #include "ecs/world.h"
 #include "physics/physics_components.h"
@@ -152,9 +153,14 @@ void EditorUI::draw_panels(World& world,
     if (selected_entity.is_valid()) {
         ImGui::Text("Entity: %llu", static_cast<unsigned long long>(selected_entity.id()));
 
+        const auto section_label = [](std::string_view stable_id) -> const char* {
+            const ComponentMeta* meta = find_component_meta(stable_id);
+            return meta != nullptr ? meta->display_name.data() : "";
+        };
+
         // Transform
         if (Transform* tf = selected_entity.get_mut<Transform>()) {
-            ImGui::SeparatorText("Transform");
+            ImGui::SeparatorText(section_label("transform"));
             bool changed = false;
             changed |= ImGui::DragFloat3("Position", &tf->position.x, 0.01f);
             changed |= ImGui::DragFloat3("Scale", &tf->scale.x, 0.01f);
@@ -167,18 +173,28 @@ void EditorUI::draw_panels(World& world,
             }
         }
 
-        // Velocity
-        if (Velocity* vel = selected_entity.get_mut<Velocity>()) {
-            ImGui::SeparatorText("Velocity");
-            ImGui::DragFloat3("Linear", &vel->linear.x, 0.01f);
-            ImGui::DragFloat3("Angular", &vel->angular.x, 0.01f);
+        if (const Renderable* renderable = selected_entity.get<Renderable>()) {
+            ImGui::SeparatorText(section_label("mesh_renderer"));
+            ImGui::TextWrapped("Asset: %s", renderable->mesh_asset_path.c_str());
+        }
+
+        if (const ScriptComponent* script = selected_entity.get<ScriptComponent>()) {
+            ImGui::SeparatorText(section_label("script"));
+            ImGui::TextWrapped("Asset: %s", script->script_asset_path.c_str());
         }
 
         // RigidBody (read-only info)
         if (const RigidBody* rb = selected_entity.get<RigidBody>()) {
-            ImGui::SeparatorText("RigidBody");
+            ImGui::SeparatorText(section_label("rigid_body"));
             ImGui::Text("body_id: %u", rb->body_id);
             ImGui::Text("sync_to_physics: %s", rb->sync_to_physics ? "true" : "false");
+        }
+
+        // Velocity
+        if (Velocity* vel = selected_entity.get_mut<Velocity>()) {
+            ImGui::SeparatorText(section_label("velocity"));
+            ImGui::DragFloat3("Linear", &vel->linear.x, 0.01f);
+            ImGui::DragFloat3("Angular", &vel->angular.x, 0.01f);
         }
     } else {
         ImGui::TextDisabled("No entity selected");

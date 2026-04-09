@@ -1,5 +1,6 @@
 #include "core/window.h"
 
+#include <GLFW/glfw3.h>
 #include <cmath>
 #include <gtest/gtest.h>
 
@@ -31,4 +32,15 @@ TEST_F(WindowInputTest, ScrollDeltaDefaultsToZero) {
 TEST_F(WindowInputTest, ResetScrollClearsDelta) {
     window_->reset_scroll();
     EXPECT_FLOAT_EQ(window_->scroll_delta_y(), 0.0f);
+}
+
+TEST_F(WindowInputTest, KeyDownDefaultsToFalse) {
+    EXPECT_FALSE(window_->key_down(GLFW_KEY_W));
+    EXPECT_FALSE(window_->key_down(GLFW_KEY_LEFT_SHIFT));
+}
+
+TEST_F(WindowInputTest, CursorCaptureTogglesWithoutCrash) {
+    window_->set_cursor_captured(true);
+    window_->set_cursor_captured(false);
+    SUCCEED();
 }

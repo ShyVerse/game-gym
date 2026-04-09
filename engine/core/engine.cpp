@@ -32,6 +32,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <GLFW/glfw3.h>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
@@ -254,6 +255,7 @@ void Engine::run() {
         float my = window_->mouse_y();
         bool left_down = window_->mouse_button(0);
         bool right_down = window_->mouse_button(1);
+        static bool was_right_down = false;
         static float last_mx = mx;
         static float last_my = my;
         static flecs::entity gizmo_target_entity;
@@ -321,17 +323,53 @@ void Engine::run() {
             }
         }
 
-        // Camera orbit (right mouse button)
+        // Camera orbit / fly navigation
         if (camera_) {
-            if (right_down) {
-                camera_->orbit(mx - last_mx, my - last_my);
+            bool right_pressed = right_down && !was_right_down;
+            bool right_released = !right_down && was_right_down;
+
+            if (right_pressed) {
+                camera_->set_fly_mode(true);
+                window_->set_cursor_captured(true);
+            } else if (right_released) {
+                camera_->set_fly_mode(false);
+                window_->set_cursor_captured(false);
             }
-            camera_->zoom(window_->scroll_delta_y());
-            window_->reset_scroll();
+
+            if (camera_->is_fly_mode()) {
+                camera_->look(mx - last_mx, my - last_my);
+
+                float strafe = 0.0f;
+                if (window_->key_down(GLFW_KEY_A)) {
+                    strafe -= 1.0f;
+                }
+                if (window_->key_down(GLFW_KEY_D)) {
+                    strafe += 1.0f;
+                }
+
+                float forward = 0.0f;
+                if (window_->key_down(GLFW_KEY_W)) {
+                    forward -= 1.0f;
+                }
+                if (window_->key_down(GLFW_KEY_S)) {
+                    forward += 1.0f;
+                }
+
+                float speed_scale = window_->key_down(GLFW_KEY_LEFT_SHIFT) ? 3.0f : 1.0f;
+                camera_->move_local(strafe, 0.0f, forward, FIXED_DT * speed_scale);
+                window_->reset_scroll();
+            } else {
+                if (right_down) {
+                    camera_->orbit(mx - last_mx, my - last_my);
+                }
+                camera_->zoom(window_->scroll_delta_y());
+                window_->reset_scroll();
+            }
         }
         // Always update last mouse position (prevents jump after drag ends)
         last_mx = mx;
         last_my = my;
+        was_right_down = right_down;
 
         editor_->begin_frame();
         editor_->draw_panels(*world_,

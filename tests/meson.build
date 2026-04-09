@@ -74,6 +74,12 @@ if get_option('enable_tests')
   )
   test('camera', test_camera)
 
+  test_component_registry = executable('test_component_registry',
+    'test_component_registry.cpp',
+    dependencies: [engine_dep, gtest_dep, gtest_main_dep],
+  )
+  test('component_registry', test_component_registry)
+
   test_mesh = executable('test_mesh',
     'test_mesh.cpp',
     dependencies: [engine_dep, gtest_dep, gtest_main_dep],
