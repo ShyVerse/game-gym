@@ -150,12 +150,26 @@ bool Window::mouse_button(int button) const {
     return glfwGetMouseButton(handle_, button) == GLFW_PRESS;
 }
 
+bool Window::key_down(int key) const {
+    if (!handle_) {
+        return false;
+    }
+    return glfwGetKey(handle_, key) == GLFW_PRESS;
+}
+
 float Window::scroll_delta_y() const {
     return scroll_y_accum_;
 }
 
 void Window::reset_scroll() {
     scroll_y_accum_ = 0.0f;
+}
+
+void Window::set_cursor_captured(bool captured) const {
+    if (!handle_) {
+        return;
+    }
+    glfwSetInputMode(handle_, GLFW_CURSOR, captured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
 } // namespace gg

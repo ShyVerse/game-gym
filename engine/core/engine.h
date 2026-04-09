@@ -1,5 +1,7 @@
 #pragma once
+#include <chrono>
 #include <cstdint>
+#include <flecs.h>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -89,6 +91,13 @@ private:
     std::string boot_status_text_;
     size_t loaded_mesh_asset_count_ = 0;
     size_t loaded_script_count_ = 0;
+    bool was_right_down_ = false;
+    bool has_last_mouse_position_ = false;
+    float last_mouse_x_ = 0.0f;
+    float last_mouse_y_ = 0.0f;
+    bool has_last_frame_time_ = false;
+    std::chrono::steady_clock::time_point last_frame_time_{};
+    flecs::entity gizmo_target_entity_{};
 
 #ifdef GG_ENABLE_SCRIPTS
     std::unique_ptr<ScriptEngine> script_engine_;

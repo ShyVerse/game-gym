@@ -30,6 +30,9 @@
 #include "script/script_manager.h"
 #endif
 
+#include <GLFW/glfw3.h>
+#include <algorithm>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -222,6 +225,15 @@ void Engine::run() {
     while (!window_->should_close()) {
         window_->poll_events();
 
+        auto frame_now = std::chrono::steady_clock::now();
+        float camera_dt = FIXED_DT;
+        if (has_last_frame_time_) {
+            camera_dt = std::chrono::duration<float>(frame_now - last_frame_time_).count();
+            camera_dt = std::clamp(camera_dt, 0.0f, 0.1f);
+        }
+        last_frame_time_ = frame_now;
+        has_last_frame_time_ = true;
+
         // MCP: poll and handle incoming requests
         if (mcp_ && mcp_transport_) {
             McpRequest mcp_req = mcp_transport_->poll_request();
@@ -254,9 +266,11 @@ void Engine::run() {
         float my = window_->mouse_y();
         bool left_down = window_->mouse_button(0);
         bool right_down = window_->mouse_button(1);
-        static float last_mx = mx;
-        static float last_my = my;
-        static flecs::entity gizmo_target_entity;
+        if (!has_last_mouse_position_) {
+            last_mouse_x_ = mx;
+            last_mouse_y_ = my;
+            has_last_mouse_position_ = true;
+        }
 
         if (gizmo_interaction_ && camera_ && gizmo_renderer_) {
             Vec3 eye = camera_->eye_position();
@@ -264,7 +278,6 @@ void Engine::run() {
 
             // Find the closest renderable entity (by camera distance)
             flecs::entity closest_entity;
-            Vec3 closest_pos{};
             float closest_cam_dist = 1e30f;
 
             if (!mesh_assets_.empty()) {
@@ -273,7 +286,6 @@ void Engine::run() {
                         float d = vec3_length(vec3_sub(eye, transform.position));
                         if (d < closest_cam_dist) {
                             closest_entity = e;
-                            closest_pos = transform.position;
                             closest_cam_dist = d;
                         }
                     });
@@ -281,8 +293,8 @@ void Engine::run() {
 
             if (closest_entity.is_valid()) {
                 // Use dragged entity during drag, closest entity otherwise
-                flecs::entity target = is_dragging && gizmo_target_entity.is_valid()
-                                           ? gizmo_target_entity
+                flecs::entity target = is_dragging && gizmo_target_entity_.is_valid()
+                                           ? gizmo_target_entity_
                                            : closest_entity;
                 const auto* target_t = target.get<Transform>();
                 if (target_t != nullptr) {
@@ -299,7 +311,7 @@ void Engine::run() {
                                                target_t->position,
                                                gizmo_scale);
 
-                    gizmo_target_entity = target;
+                    gizmo_target_entity_ = target;
 
                     // Apply drag delta
                     Vec3 delta = gizmo_interaction_->position_delta();
@@ -321,17 +333,54 @@ void Engine::run() {
             }
         }
 
-        // Camera orbit (right mouse button)
+        // Camera orbit / fly navigation
         if (camera_) {
-            if (right_down) {
-                camera_->orbit(mx - last_mx, my - last_my);
+            bool right_pressed = right_down && !was_right_down_;
+            bool right_released = !right_down && was_right_down_;
+            float mouse_dx = mx - last_mouse_x_;
+            float mouse_dy = my - last_mouse_y_;
+
+            if (right_pressed) {
+                camera_->set_fly_mode(true);
+                window_->set_cursor_captured(true);
+            } else if (right_released) {
+                camera_->set_fly_mode(false);
+                window_->set_cursor_captured(false);
             }
-            camera_->zoom(window_->scroll_delta_y());
+
+            if (camera_->is_fly_mode()) {
+                camera_->look(mouse_dx, mouse_dy);
+
+                float strafe = 0.0f;
+                if (window_->key_down(GLFW_KEY_A)) {
+                    strafe -= 1.0f;
+                }
+                if (window_->key_down(GLFW_KEY_D)) {
+                    strafe += 1.0f;
+                }
+
+                float forward = 0.0f;
+                if (window_->key_down(GLFW_KEY_W)) {
+                    forward -= 1.0f;
+                }
+                if (window_->key_down(GLFW_KEY_S)) {
+                    forward += 1.0f;
+                }
+
+                float speed_scale = window_->key_down(GLFW_KEY_LEFT_SHIFT) ? 3.0f : 1.0f;
+                camera_->move_local(strafe, 0.0f, forward, camera_dt * speed_scale);
+            } else {
+                if (right_down) {
+                    camera_->orbit(mouse_dx, mouse_dy);
+                }
+                camera_->zoom(window_->scroll_delta_y());
+            }
             window_->reset_scroll();
         }
         // Always update last mouse position (prevents jump after drag ends)
-        last_mx = mx;
-        last_my = my;
+        last_mouse_x_ = mx;
+        last_mouse_y_ = my;
+        was_right_down_ = right_down;
 
         editor_->begin_frame();
         editor_->draw_panels(*world_,
@@ -396,7 +445,7 @@ void Engine::run() {
 
             // Gizmo on the closest (or selected) entity only
             if (gizmo_renderer_ && camera_ && !mesh_assets_.empty()) {
-                flecs::entity gizmo_entity = gizmo_target_entity;
+                flecs::entity gizmo_entity = gizmo_target_entity_;
                 if (gizmo_entity.is_valid()) {
                     const auto* gt = gizmo_entity.get<Transform>();
                     if (gt != nullptr) {
